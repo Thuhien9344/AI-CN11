@@ -28,6 +28,7 @@ async def create_chat_message(
     chat_message = ChatHistory(
         user_id=user_id,
         lesson_id=message_data.lesson_id,
+        session_id=message_data.session_id,
         user_message=message_data.user_message,
         ai_response="",  # Placeholder - would be filled by AI service
     )
@@ -42,6 +43,7 @@ async def create_chat_message(
 async def get_chat_history(
     user_id: int,
     lesson_id: int = None,
+    session_id: str | None = None,
     skip: int = 0,
     limit: int = 50,
     db: Session = Depends(get_db)
@@ -58,6 +60,8 @@ async def get_chat_history(
 
     if lesson_id:
         query = query.filter(ChatHistory.lesson_id == lesson_id)
+    if session_id:
+        query = query.filter(ChatHistory.session_id == session_id)
 
     messages = query.order_by(ChatHistory.created_at.desc()).offset(skip).limit(limit).all()
     return messages

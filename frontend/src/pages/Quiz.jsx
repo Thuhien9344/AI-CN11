@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { questionsAPI, quizAPI } from '../services/api'
 import { useAuthStore } from '../store'
+import { getSampleLesson, getSampleQuestionsByLesson } from '../data/courseCatalog'
+import { recordLocalLearningEvent } from '../utils/learningProgress'
 
 export default function Quiz() {
   const { lessonId } = useParams()
@@ -11,6 +13,7 @@ export default function Quiz() {
   const [score, setScore] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [quizSubmitted, setQuizSubmitted] = useState(false)
+  const lesson = getSampleLesson(lessonId)
 
   useEffect(() => {
     fetchQuestions()
@@ -20,6 +23,8 @@ export default function Quiz() {
     try {
       const response = await questionsAPI.list(lessonId)
       setQuestions(response.data)
+    } catch (error) {
+      setQuestions(getSampleQuestionsByLesson(lessonId))
     } finally {
       setIsLoading(false)
     }
@@ -30,94 +35,117 @@ export default function Quiz() {
     const isCorrect = question.options.some((opt) => opt.id === optionId && opt.is_correct)
 
     try {
-      await quizAPI.submit(user.id, {
+      await quizAPI.submit(user?.id || 1, {
         question_id: question.id,
         selected_answer: optionId.toString(),
         time_spent_seconds: 30,
       })
+    } catch {
+      // Offline mode: kiểm tra vẫn chạy khi backend chưa bật.
+    }
 
-      if (isCorrect) {
-        setScore((prev) => prev + 1)
-      }
+    if (isCorrect) {
+      setScore((prev) => prev + 1)
+    }
 
-      if (currentIndex < questions.length - 1) {
-        setCurrentIndex((prev) => prev + 1)
-      } else {
-        setQuizSubmitted(true)
-      }
-    } catch (error) {
-      console.error('Error submitting answer:', error)
+    if (currentIndex < questions.length - 1) {
+      setCurrentIndex((prev) => prev + 1)
+    } else {
+      const finalScore = score + (isCorrect ? 1 : 0)
+      const scorePercent = Math.round((finalScore / questions.length) * 100)
+      recordLocalLearningEvent(user?.id, {
+        lesson_id: Number(lessonId),
+        event_type: 'quiz_submitted',
+        duration_seconds: 30,
+        score: scorePercent,
+        payload: { correct_answers: finalScore, total_questions: questions.length },
+      })
+      setQuizSubmitted(true)
     }
   }
 
-  if (isLoading) return <div className="p-8 text-center">Loading quiz...</div>
+  if (isLoading) {
+    return <div className="page-container text-center text-slate-600">Đang tải bài kiểm tra...</div>
+  }
 
   if (questions.length === 0) {
-    return <div className="p-8 text-center text-gray-600">No questions available for this lesson.</div>
+    return <div className="page-container text-center text-slate-600">Bài này chưa có câu hỏi kiểm tra.</div>
   }
 
   if (quizSubmitted) {
     const percentage = Math.round((score / questions.length) * 100)
     return (
-      <div className="max-w-2xl mx-auto px-4 py-12">
-        <div className="bg-white rounded-lg shadow p-8 text-center">
-          <h1 className="text-4xl font-bold mb-4 text-gray-900">Quiz Complete!</h1>
-          <div className="mb-6">
-            <div className="text-6xl font-bold text-blue-600 mb-2">
-              {percentage}%
-            </div>
-            <p className="text-xl text-gray-600">
-              You got {score} out of {questions.length} correct
+      <div className="page-container">
+        <div className="panel mx-auto max-w-2xl p-8 text-center">
+          <p className="muted-label mb-2">Kết quả đánh giá</p>
+          <h1 className="text-3xl font-bold text-slate-950">Hoàn thành kiểm tra nhanh</h1>
+          <div className="my-8">
+            <div className="text-6xl font-bold text-blue-600">{percentage}%</div>
+            <p className="mt-3 text-lg text-slate-600">
+              Bạn trả lời đúng {score} trên {questions.length} câu
             </p>
           </div>
-          <button
-            onClick={() => {
-              setCurrentIndex(0)
-              setScore(0)
-              setQuizSubmitted(false)
-            }}
-            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
-          >
-            Retake Quiz
-          </button>
+          <div className="flex flex-wrap justify-center gap-3">
+            <button
+              onClick={() => {
+                setCurrentIndex(0)
+                setScore(0)
+                setQuizSubmitted(false)
+              }}
+              className="primary-button"
+            >
+              Làm lại
+            </button>
+            <Link to={`/lessons/${lessonId}`} className="secondary-button">
+              Quay lại bài học
+            </Link>
+          </div>
         </div>
       </div>
     )
   }
 
   const question = questions[currentIndex]
+  const progress = ((currentIndex + 1) / questions.length) * 100
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-8">
-      <div className="bg-white rounded-lg shadow p-8">
+    <div className="page-container">
+      <div className="panel mx-auto max-w-3xl p-6 sm:p-8">
         <div className="mb-6">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-gray-600">Question {currentIndex + 1} of {questions.length}</span>
-            <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
-              {question.points} points
+          <p className="muted-label mb-2">Kiểm tra nhanh</p>
+          <h1 className="text-2xl font-bold text-slate-950">{lesson?.title || 'Động cơ đốt trong'}</h1>
+          <p className="mt-2 text-sm text-slate-500">
+            Chọn đáp án đúng nhất để tự đánh giá mức độ hiểu bài.
+          </p>
+        </div>
+
+        <div className="mb-6">
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-sm font-semibold text-slate-600">
+              Câu {currentIndex + 1} / {questions.length}
+            </span>
+            <span className="rounded-md bg-blue-50 px-3 py-1 text-sm font-semibold text-blue-700">
+              {question.points} điểm
             </span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div
-              className="bg-blue-600 h-2 rounded-full transition-all"
-              style={{ width: `${((currentIndex + 1) / questions.length) * 100}%` }}
-            ></div>
+          <div className="h-2 overflow-hidden rounded-full bg-slate-200">
+            <div className="h-full bg-blue-600 transition-all" style={{ width: `${progress}%` }}></div>
           </div>
         </div>
 
-        <h2 className="text-2xl font-bold mb-6 text-gray-900">{question.text}</h2>
+        <h2 className="mb-6 text-2xl font-bold leading-8 text-slate-950">{question.text}</h2>
 
         <div className="space-y-3">
-          {question.options.map((option) => (
+          {question.options.map((option, index) => (
             <button
               key={option.id}
               onClick={() => handleAnswer(option.id)}
-              className="w-full text-left p-4 border-2 border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition"
+              className="flex w-full items-start gap-3 rounded-lg border border-slate-200 bg-white p-4 text-left transition hover:border-blue-300 hover:bg-blue-50"
             >
-              <div className="flex items-center">
-                <div className="w-5 h-5 border-2 border-gray-300 rounded-full mr-3"></div>
-                <span className="text-gray-900">{option.text}</span>
-              </div>
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-slate-100 text-sm font-bold text-slate-700">
+                {String.fromCharCode(65 + index)}
+              </span>
+              <span className="text-slate-800">{option.text}</span>
             </button>
           ))}
         </div>

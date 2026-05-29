@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+const API_BASE_URL = import.meta.env.VITE_API_URL ?? ''
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -67,6 +67,8 @@ export const questionsAPI = {
 // Quiz
 export const quizAPI = {
   submit: (userId, data) => api.post(`/api/quiz/submit?user_id=${userId}`, data),
+  getAttempts: (userId, params = {}) =>
+    api.get(`/api/quiz/attempts/user/${userId}`, { params }),
   getResults: (userId, skip = 0, limit = 50) =>
     api.get(`/api/quiz/results/user/${userId}`, { params: { skip, limit } }),
   getStats: (questionId) => api.get(`/api/quiz/results/question/${questionId}`),
@@ -79,6 +81,63 @@ export const chatAPI = {
     api.get(`/api/chat/history/${userId}`, {
       params: { lesson_id: lessonId, skip, limit }
     }),
+}
+
+// Personalized learning
+export const learningAPI = {
+  trackEvent: (userId, data) => api.post(`/api/learning/users/${userId}/events`, data),
+  getEvents: (userId, lessonId = null, limit = 50) =>
+    api.get(`/api/learning/users/${userId}/events`, {
+      params: { lesson_id: lessonId, limit },
+    }),
+  getDashboard: (userId, courseId = null) =>
+    api.get(`/api/learning/users/${userId}/dashboard`, {
+      params: { course_id: courseId },
+    }),
+  getLessonProgress: (userId, lessonId) =>
+    api.get(`/api/learning/users/${userId}/lessons/${lessonId}/progress`),
+  updateLessonProgress: (userId, lessonId, data) =>
+    api.put(`/api/learning/users/${userId}/lessons/${lessonId}/progress`, data),
+}
+
+// Shared reference materials
+export const materialsAPI = {
+  list: (params = {}) => api.get('/api/materials', { params }),
+  upload: (formData) =>
+    api.post('/api/materials', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+  download: (materialId) =>
+    api.get(`/api/materials/${materialId}/download`, {
+      responseType: 'blob',
+    }),
+  delete: (materialId) => api.delete(`/api/materials/${materialId}`),
+}
+
+export const classroomAPI = {
+  listPosts: (params = {}) => api.get('/api/classroom/posts', { params }),
+  createPost: (data) => api.post('/api/classroom/posts', data),
+  listAssignments: (params = {}) => api.get('/api/classroom/assignments', { params }),
+  createAssignment: (data) => api.post('/api/classroom/assignments', data),
+  listSubmissions: (assignmentId) =>
+    api.get(`/api/classroom/assignments/${assignmentId}/submissions`),
+  gradeSubmission: (submissionId, data) =>
+    api.patch(`/api/classroom/submissions/${submissionId}/grade`, data),
+  submitAssignment: (assignmentId, formData) =>
+    api.post(`/api/classroom/assignments/${assignmentId}/submissions`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+  downloadSubmission: (submissionId) =>
+    api.get(`/api/classroom/submissions/${submissionId}/download`, {
+      responseType: 'blob',
+    }),
+}
+
+export const nova3dAPI = {
+  getConfig: () => api.get('/api/nova3d/config'),
+  generateFourStrokeEngine: (data = {}) => api.post('/api/nova3d/four-stroke-engine', data),
+  getWorkflowStatus: (workflowId) => api.get(`/api/nova3d/workflows/${workflowId}/status`),
+  getWorkflowResult: (workflowId) => api.get(`/api/nova3d/workflows/${workflowId}/result`),
 }
 
 export default api

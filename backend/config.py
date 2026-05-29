@@ -1,9 +1,20 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import Optional
+from pathlib import Path
+
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_DATABASE_URL = f"sqlite:///{(PROJECT_ROOT / 'ai_education.db').as_posix()}"
 
 
 class Settings(BaseSettings):
     """Application settings and configuration."""
+    model_config = SettingsConfigDict(
+        env_file="backend/.env",
+        env_prefix="ENGINE_LAB_",
+        case_sensitive=False,
+        extra="ignore",
+    )
 
     # Basic App Settings
     app_name: str = "AI Education System"
@@ -11,7 +22,7 @@ class Settings(BaseSettings):
     version: str = "0.1.0"
 
     # Database
-    database_url: str = "postgresql://ai_user:ai_password@localhost:5432/ai_education"
+    database_url: str = DEFAULT_DATABASE_URL
 
     # Redis
     redis_url: str = "redis://localhost:6379/0"
@@ -29,14 +40,16 @@ class Settings(BaseSettings):
     ai_api_key: Optional[str] = None
     ai_base_url: Optional[str] = None
 
+    # Nova3D GraphFlow Service
+    nova3d_base_url: str = "https://nova3d.xyz/api"
+    nova3d_auth_token: Optional[str] = None
+    nova3d_provider: str = "gemini"
+    nova3d_llm: str = "gemini"
+    nova3d_provider_api_key: Optional[str] = None
+
     # Features
     enable_3d_simulation: bool = True
     enable_chatbot: bool = True
     enable_gamification: bool = True
-
-    class Config:
-        env_file = ".env"
-        case_sensitive = False
-
 
 settings = Settings()

@@ -15,7 +15,7 @@
     "axios": "^1.6.0",
     "zustand": "^4.4.0",
     "react-router-dom": "^6.20.0",
-    "three": "^r159",
+    "three": "^0.159.0",
     "socket.io-client": "^4.7.0",
     "@tailwindcss/forms": "^0.5.6",
     "clsx": "^2.0.0",

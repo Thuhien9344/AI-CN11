@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr, Field
-from typing import Optional, List
+from typing import Any, Dict, Optional, List
 from datetime import datetime
 from enum import Enum
 
@@ -8,6 +8,7 @@ class UserRole(str, Enum):
     STUDENT = "student"
     TEACHER = "teacher"
     ADMIN = "admin"
+    MODERATOR = "moderator"
 
 
 # ============= User Schemas =============
@@ -127,6 +128,7 @@ class QuestionResponse(QuestionBase):
 # ============= Quiz Result Schemas =============
 class QuizResultBase(BaseModel):
     question_id: int
+    attempt_id: Optional[int] = None
     selected_answer: Optional[str] = None
     time_spent_seconds: int = 0
 
@@ -146,10 +148,30 @@ class QuizResultResponse(QuizResultBase):
         from_attributes = True
 
 
+class QuizAttemptResponse(BaseModel):
+    id: int
+    user_id: int
+    lesson_id: int
+    total_questions: int
+    correct_answers: int
+    total_points: float
+    points_earned: float
+    score_percent: float
+    time_spent_seconds: int
+    status: str
+    started_at: datetime
+    submitted_at: datetime
+    results: List[QuizResultResponse] = []
+
+    class Config:
+        from_attributes = True
+
+
 # ============= Chat History Schemas =============
 class ChatMessageBase(BaseModel):
     user_message: str
     lesson_id: Optional[int] = None
+    session_id: Optional[str] = Field(default=None, max_length=64)
 
 
 class ChatMessageCreate(ChatMessageBase):
@@ -166,6 +188,96 @@ class ChatMessageResponse(ChatMessageBase):
         from_attributes = True
 
 
+# ============= Personalized Learning Schemas =============
+class LearningEventCreate(BaseModel):
+    lesson_id: Optional[int] = None
+    event_type: str = Field(..., min_length=1, max_length=50)
+    duration_seconds: int = Field(default=0, ge=0)
+    score: Optional[float] = Field(default=None, ge=0)
+    payload: Optional[Dict[str, Any]] = None
+
+
+class LearningEventResponse(LearningEventCreate):
+    id: int
+    user_id: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class LessonProgressUpdate(BaseModel):
+    status: Optional[str] = None
+    progress_percent: Optional[float] = Field(default=None, ge=0, le=100)
+    time_spent_seconds: int = Field(default=0, ge=0)
+    quiz_score: Optional[float] = Field(default=None, ge=0, le=100)
+    activity_type: Optional[str] = None
+
+
+class LessonProgressResponse(BaseModel):
+    id: int
+    user_id: int
+    lesson_id: int
+    status: str
+    progress_percent: float
+    view_count: int
+    simulation_count: int
+    assistant_question_count: int
+    quiz_attempt_count: int
+    best_quiz_score: float
+    average_quiz_score: float
+    time_spent_seconds: int
+    last_activity_type: Optional[str] = None
+    last_accessed_at: datetime
+    completed_at: Optional[datetime] = None
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class LearningRecommendation(BaseModel):
+    lesson_id: int
+    title: str
+    reason: str
+    priority: str
+    suggested_action: str
+
+
+class LearningDashboardResponse(BaseModel):
+    user_id: int
+    total_lessons: int
+    completed_lessons: int
+    in_progress_lessons: int
+    average_progress: float
+    average_quiz_score: float
+    total_time_spent_seconds: int
+    assistant_questions: int
+    recent_events: List[LearningEventResponse] = []
+    lesson_progress: List[LessonProgressResponse] = []
+    recommendations: List[LearningRecommendation] = []
+
+
+# ============= Reference Material Schemas =============
+class ReferenceMaterialResponse(BaseModel):
+    id: int
+    title: str
+    description: str = ""
+    course_id: Optional[int] = None
+    lesson_id: Optional[int] = None
+    file_name: str
+    file_type: str = ""
+    file_size: int = 0
+    file_checksum: Optional[str] = None
+    uploader: str = "Giáo viên"
+    uploader_user_id: Optional[int] = None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
 # ============= Auth Schemas =============
 class Token(BaseModel):
     access_token: str
@@ -175,3 +287,69 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     username: Optional[str] = None
+
+
+# ============= Classroom Schemas =============
+class ClassroomPostCreate(BaseModel):
+    title: str = Field(..., min_length=1, max_length=255)
+    body: str = Field(..., min_length=1)
+    post_type: str = "announcement"
+    status: str = "published"
+    course_id: Optional[int] = None
+    author: str = "Giáo viên"
+    author_user_id: Optional[int] = None
+
+
+class ClassroomPostResponse(ClassroomPostCreate):
+    id: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class AssignmentCreate(BaseModel):
+    title: str = Field(..., min_length=1, max_length=255)
+    description: str = Field(..., min_length=1)
+    course_id: Optional[int] = None
+    lesson_id: Optional[int] = None
+    status: str = "published"
+    due_at: Optional[datetime] = None
+    created_by: str = "Giáo viên"
+    created_by_user_id: Optional[int] = None
+
+
+class AssignmentResponse(AssignmentCreate):
+    id: int
+    created_at: datetime
+    updated_at: datetime
+    submission_count: int = 0
+
+    class Config:
+        from_attributes = True
+
+
+class AssignmentSubmissionResponse(BaseModel):
+    id: int
+    assignment_id: int
+    student_user_id: Optional[int] = None
+    student_name: str
+    content: str = ""
+    file_name: Optional[str] = None
+    file_type: str = ""
+    file_size: int = 0
+    file_checksum: Optional[str] = None
+    score: Optional[float] = None
+    feedback: str = ""
+    graded_by: Optional[int] = None
+    graded_at: Optional[datetime] = None
+    submitted_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class AssignmentGradeUpdate(BaseModel):
+    score: Optional[float] = Field(default=None, ge=0, le=100)
+    feedback: str = ""
+    graded_by: Optional[int] = None

@@ -1,7 +1,8 @@
 # Backend
 backend/.env
-backend/__pycache__/
+backend/**/__pycache__/
 backend/*.py[cod]
+backend/**/*.py[cod]
 backend/*$py.class
 backend/*.so
 backend/.Python
@@ -24,6 +25,7 @@ backend/.pytest_cache/
 backend/.coverage
 backend/.idea/
 backend/*.db
+backend/uploads/
 
 # Frontend
 frontend/node_modules/
@@ -38,10 +40,17 @@ frontend/*.njsproj
 frontend/*.sln
 frontend/.vscode/
 frontend/.idea/
+frontend/vite-*.err
+frontend/vite-*.log
+
+# Local runtime artifacts
+ai_education.db
+tools/
 
 # Docker
 .DS_Store
 *.log
+*.err
 
 # IDE
 .vscode/

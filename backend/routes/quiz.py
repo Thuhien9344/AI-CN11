@@ -3,8 +3,8 @@ from sqlalchemy.orm import Session
 from typing import List
 
 from database import get_db
-from models import QuizResult, Question, User
-from schemas import QuizResultResponse, QuizResultCreate
+from models import LearningEvent, LessonProgress, QuizAttempt, QuizResult, Question, User
+from schemas import QuizAttemptResponse, QuizResultResponse, QuizResultCreate
 
 router = APIRouter(prefix="/api", tags=["Quiz"])
 
@@ -50,9 +50,41 @@ async def submit_quiz_answer(
             is_correct = True
             points_earned = question.points
 
+    attempt = None
+    if result_data.attempt_id:
+        attempt = (
+            db.query(QuizAttempt)
+            .filter(
+                QuizAttempt.id == result_data.attempt_id,
+                QuizAttempt.user_id == user_id,
+            )
+            .first()
+        )
+        if not attempt:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Quiz attempt not found",
+            )
+
+    if not attempt:
+        attempt = QuizAttempt(
+            user_id=user_id,
+            lesson_id=question.lesson_id,
+            total_questions=0,
+            correct_answers=0,
+            total_points=0.0,
+            points_earned=0.0,
+            score_percent=0.0,
+            time_spent_seconds=0,
+            status="submitted",
+        )
+        db.add(attempt)
+        db.flush()
+
     # Save quiz result
     quiz_result = QuizResult(
         user_id=user_id,
+        attempt_id=attempt.id,
         question_id=result_data.question_id,
         selected_answer=result_data.selected_answer,
         is_correct=is_correct,
@@ -60,10 +92,89 @@ async def submit_quiz_answer(
         time_spent_seconds=result_data.time_spent_seconds,
     )
     db.add(quiz_result)
+    lesson_id = question.lesson_id
+    total_points = question.points or 1
+    score_percent = round((points_earned / total_points) * 100, 2) if total_points else 0
+
+    attempt.total_questions += 1
+    attempt.correct_answers += 1 if is_correct else 0
+    attempt.total_points += total_points
+    attempt.points_earned += points_earned
+    attempt.time_spent_seconds += result_data.time_spent_seconds
+    attempt.score_percent = (
+        round((attempt.points_earned / attempt.total_points) * 100, 2)
+        if attempt.total_points
+        else 0
+    )
+
+    learning_event = LearningEvent(
+        user_id=user_id,
+        lesson_id=lesson_id,
+        event_type="quiz_submitted",
+        duration_seconds=result_data.time_spent_seconds,
+        score=score_percent,
+        payload={
+            "question_id": question.id,
+            "selected_answer": result_data.selected_answer,
+            "is_correct": is_correct,
+            "points_earned": points_earned,
+        },
+    )
+    db.add(learning_event)
+
+    progress = (
+        db.query(LessonProgress)
+        .filter(
+            LessonProgress.user_id == user_id,
+            LessonProgress.lesson_id == lesson_id,
+        )
+        .first()
+    )
+    if not progress:
+        progress = LessonProgress(user_id=user_id, lesson_id=lesson_id)
+        db.add(progress)
+        db.flush()
+
+    progress.quiz_attempt_count += 1
+    progress.time_spent_seconds += result_data.time_spent_seconds
+    progress.last_activity_type = "quiz_submitted"
+    progress.best_quiz_score = max(progress.best_quiz_score, attempt.score_percent)
+    previous_total = progress.average_quiz_score * (progress.quiz_attempt_count - 1)
+    progress.average_quiz_score = round((previous_total + attempt.score_percent) / progress.quiz_attempt_count, 2)
+    progress.progress_percent = max(progress.progress_percent, 100 if attempt.score_percent >= 70 else 75)
+    progress.status = "completed" if progress.progress_percent >= 100 else "needs_review"
     db.commit()
     db.refresh(quiz_result)
 
     return quiz_result
+
+
+@router.get("/quiz/attempts/user/{user_id}", response_model=List[QuizAttemptResponse])
+async def get_user_attempts(
+    user_id: int,
+    lesson_id: int | None = None,
+    skip: int = 0,
+    limit: int = 50,
+    db: Session = Depends(get_db),
+):
+    """Get quiz attempts for a user, grouped by lesson/session."""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
+    query = db.query(QuizAttempt).filter(QuizAttempt.user_id == user_id)
+    if lesson_id is not None:
+        query = query.filter(QuizAttempt.lesson_id == lesson_id)
+
+    return (
+        query.order_by(QuizAttempt.submitted_at.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
 
 
 @router.get("/quiz/results/user/{user_id}", response_model=List[QuizResultResponse])

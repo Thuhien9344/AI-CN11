@@ -11,6 +11,14 @@ import LessonDetail from './pages/LessonDetail'
 import ChatBot from './pages/ChatBot'
 import Quiz from './pages/Quiz'
 import ThreeDSimulation from './pages/ThreeDSimulation'
+import EngineGame from './pages/EngineGame'
+import PersonalProgress from './pages/PersonalProgress'
+import ChapterTests from './pages/ChapterTests'
+import Classroom from './pages/Classroom'
+import WarmupGameArena from './pages/WarmupGameArena'
+import SystemDesignLab from './pages/SystemDesignLab'
+import FunContests from './pages/FunContests'
+import PracticeBank from './pages/PracticeBank'
 import NotFound from './pages/NotFound'
 
 // Components
@@ -25,8 +33,20 @@ const ProtectedRoute = ({ children }) => {
 function App() {
   return (
     <BrowserRouter>
-      <Toaster position="top-right" />
-      <div className="min-h-screen bg-gray-50">
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 3200,
+          style: {
+            border: '1px solid #e2e8f0',
+            borderRadius: '8px',
+            boxShadow: '0 10px 30px rgba(15, 23, 42, 0.12)',
+            color: '#0f172a',
+            fontWeight: 600,
+          },
+        }}
+      />
+      <div className="min-h-screen bg-transparent">
         <Navigation />
         <Routes>
           {/* Public Routes */}
@@ -47,6 +67,70 @@ function App() {
             element={
               <ProtectedRoute>
                 <CourseDetail />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/progress"
+            element={
+              <ProtectedRoute>
+                <PersonalProgress />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/materials"
+            element={
+              <ProtectedRoute>
+                <Navigate to="/classroom" replace />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/classroom"
+            element={
+              <ProtectedRoute>
+                <Classroom />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/games"
+            element={
+              <ProtectedRoute>
+                <WarmupGameArena />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/contests"
+            element={
+              <ProtectedRoute>
+                <FunContests />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/practice-bank"
+            element={
+              <ProtectedRoute>
+                <PracticeBank />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/design-lab"
+            element={
+              <ProtectedRoute>
+                <SystemDesignLab />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/courses/:courseId/chapter-tests"
+            element={
+              <ProtectedRoute>
+                <ChapterTests />
               </ProtectedRoute>
             }
           />
@@ -79,6 +163,22 @@ function App() {
             element={
               <ProtectedRoute>
                 <ThreeDSimulation />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/lessons/:lessonId/game"
+            element={
+              <ProtectedRoute>
+                <EngineGame />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/lessons/:lessonId/design"
+            element={
+              <ProtectedRoute>
+                <SystemDesignLab />
               </ProtectedRoute>
             }
           />

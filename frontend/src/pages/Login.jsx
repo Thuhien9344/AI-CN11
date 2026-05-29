@@ -1,7 +1,28 @@
 import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { useAuthStore } from '../store'
+
+const accountTypes = [
+  {
+    value: 'student',
+    title: 'Học sinh THPT',
+    badge: 'Học bài - luyện tập - nộp nhiệm vụ',
+    description: 'Theo dõi lộ trình Công nghệ, làm quiz, game luyện tập, vẽ sơ đồ và xem hồ sơ năng lực.',
+  },
+  {
+    value: 'teacher',
+    title: 'Giáo viên Công nghệ',
+    badge: 'Quản lý lớp - học liệu - đánh giá',
+    description: 'Tổ chức bài học, giao nhiệm vụ, tải học liệu và theo dõi tiến độ học tập của lớp.',
+  },
+]
+
+const highlights = [
+  'Thiết kế riêng cho môn Công nghệ THPT',
+  'Trọng tâm cơ khí, động cơ đốt trong và ô tô',
+  'Kết hợp mô phỏng, sơ đồ, game và đánh giá',
+]
 
 export default function Login() {
   const navigate = useNavigate()
@@ -9,81 +30,124 @@ export default function Login() {
   const [formData, setFormData] = useState({
     username: '',
     password: '',
+    role: 'student',
   })
 
-  const handleChange = (e) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }))
+  const handleChange = (event) => {
+    const { name, value } = event.target
+    setFormData((prev) => ({ ...prev, [name]: value }))
   }
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    const success = await login(formData.username, formData.password)
-    if (success) {
-      toast.success('Login successful!')
+  const chooseRole = (role) => {
+    setFormData((prev) => ({ ...prev, role }))
+  }
+
+  const handleSubmit = async (event) => {
+    event.preventDefault()
+    const result = await login(formData.username, formData.password, formData.role)
+
+    if (result.success) {
+      toast.success('Đăng nhập thành công')
       navigate('/')
     } else {
-      toast.error(error || 'Login failed')
+      toast.error(result.error || error || 'Đăng nhập thất bại')
     }
   }
 
+  const activeRole = accountTypes.find((item) => item.value === formData.role)
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-blue-500 to-purple-600">
-      <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-md">
-        <h1 className="text-3xl font-bold text-center mb-6 text-gray-800">
-          Login
-        </h1>
+    <main className="flex min-h-[calc(100vh-72px)] items-center justify-center px-4 py-8 sm:px-6 lg:px-8">
+      <section className="grid w-full max-w-6xl overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm lg:grid-cols-[0.95fr_1.05fr]">
+        <aside className="relative overflow-hidden bg-slate-950 p-7 text-white sm:p-9">
+          <div className="absolute right-8 top-8 h-28 w-28 rounded-full border border-white/10" />
+          <div className="absolute bottom-8 right-24 h-20 w-20 rounded-lg border border-blue-300/20" />
+          <p className="text-xs font-black uppercase tracking-[0.22em] text-blue-300">EngineLab Công nghệ</p>
+          <h1 className="mt-4 max-w-xl text-3xl font-black leading-tight sm:text-4xl">
+            Phòng học Công nghệ THPT
+          </h1>
+          <p className="mt-4 max-w-xl text-sm leading-7 text-slate-300">
+            Không gian học tập chuyên biệt cho môn Công nghệ: học lí thuyết, quan sát mô phỏng, thiết kế sơ đồ hệ
+            thống, luyện tập và nhận phản hồi theo từng chương.
+          </p>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Username
-            </label>
-            <input
-              type="text"
-              name="username"
-              value={formData.username}
-              onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Enter your username"
-              required
-            />
+          <div className="mt-8 grid gap-3">
+            {highlights.map((item) => (
+              <div key={item} className="rounded-lg border border-slate-800 bg-slate-900/80 px-4 py-3 text-sm font-bold">
+                {item}
+              </div>
+            ))}
+          </div>
+        </aside>
+
+        <section className="p-6 sm:p-9">
+          <p className="muted-label">Đăng nhập tài khoản</p>
+          <h2 className="mt-2 text-3xl font-black text-slate-950">{activeRole.title}</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-500">{activeRole.badge}</p>
+
+          <div className="mt-6 grid gap-3 md:grid-cols-2">
+            {accountTypes.map((type) => (
+              <button
+                key={type.value}
+                type="button"
+                onClick={() => chooseRole(type.value)}
+                className={`rounded-lg border p-4 text-left transition ${
+                  formData.role === type.value
+                    ? 'border-slate-950 bg-slate-950 text-white shadow-sm'
+                    : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
+                }`}
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <span className="font-black">{type.title}</span>
+                  <span className={`h-3 w-3 rounded-full ${formData.role === type.value ? 'bg-blue-400' : 'bg-slate-300'}`} />
+                </div>
+                <p className={`mt-2 text-sm leading-6 ${formData.role === type.value ? 'text-slate-300' : 'text-slate-600'}`}>
+                  {type.description}
+                </p>
+              </button>
+            ))}
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Password
-            </label>
-            <input
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Enter your password"
-              required
-            />
-          </div>
+          <form onSubmit={handleSubmit} className="mt-7 space-y-4">
+            <div>
+              <label className="mb-2 block text-sm font-bold text-slate-700">Tên đăng nhập hoặc email</label>
+              <input
+                type="text"
+                name="username"
+                value={formData.username}
+                onChange={handleChange}
+                className="field-control"
+                placeholder="Nhập tên đăng nhập hoặc email"
+                required
+              />
+            </div>
 
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 font-medium transition"
-          >
-            {isLoading ? 'Logging in...' : 'Login'}
-          </button>
-        </form>
+            <div>
+              <label className="mb-2 block text-sm font-bold text-slate-700">Mật khẩu</label>
+              <input
+                type="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                className="field-control"
+                placeholder="Nhập mật khẩu"
+                required
+              />
+            </div>
 
-        <p className="text-center mt-4 text-gray-600">
-          Don't have an account?{' '}
-          <Link to="/register" className="text-blue-600 hover:underline font-medium">
-            Register here
-          </Link>
-        </p>
-      </div>
-    </div>
+            <button type="submit" disabled={isLoading} className="primary-button w-full py-3">
+              {isLoading ? 'Đang đăng nhập...' : 'Đăng nhập'}
+            </button>
+          </form>
+
+          <p className="mt-6 text-center text-sm text-slate-600">
+            Chưa có tài khoản?{' '}
+            <Link to="/register" className="font-black text-blue-700 hover:text-blue-800">
+              Tạo tài khoản mới
+            </Link>
+          </p>
+        </section>
+      </section>
+    </main>
   )
 }
