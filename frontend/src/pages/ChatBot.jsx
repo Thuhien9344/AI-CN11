@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { getSampleLesson } from '../data/courseCatalog'
+import { chatAPI } from '../services/api'
 import { useAuthStore } from '../store'
 import { recordLocalLearningEvent } from '../utils/learningProgress'
 
@@ -91,17 +92,50 @@ const buildMaterialAndManufacturingReply = (text, lesson) => {
 }
 
 const suggestedQuestions = [
-  'Trình bày nguyên lý làm việc của động cơ 4 kỳ',
-  'Kỳ nào là kỳ sinh công? Vì sao?',
-  'Piston, thanh truyền và trục khuỷu phối hợp như thế nào?',
-  'Vì sao động cơ cần hệ thống bôi trơn và làm mát?',
+  'Công nghệ khác kĩ thuật ở điểm nào?',
+  'Hệ thống kĩ thuật gồm những phần nào?',
+  'Khi nào cần dùng hình cắt trong bản vẽ kĩ thuật?',
+  'Quy trình thiết kế kĩ thuật gồm những bước nào?',
 ]
 
 const buildTutorReply = (message, lesson) => {
   const text = normalizeVietnamese(message)
 
   if (!text.trim()) {
-      return 'Em hãy nhập câu hỏi về động cơ đốt trong. Ví dụ: "Kỳ nạp diễn ra thế nào?" hoặc "Vì sao cần bôi trơn?".'
+      return 'Em hãy nhập câu hỏi về Công nghệ 10. Ví dụ: "Hệ thống kĩ thuật gồm gì?", "Khi nào dùng hình cắt?" hoặc "Quy trình thiết kế gồm những bước nào?".'
+  }
+
+  if (hasAnyKeyword(text, ['cong nghe', 'ky thuat', 'doi song', 'dai cuong'])) {
+    return compactReply('Cách hiểu nhanh về công nghệ trong đời sống:', [
+      'Công nghệ là giải pháp, quy trình, tri thức và phương tiện được tạo ra để giải quyết nhu cầu thực tiễn.',
+      'Kĩ thuật thiên về vận dụng nguyên lí khoa học để thiết kế, chế tạo, vận hành và tối ưu hệ thống.',
+      'Khi học bài này, nên luôn hỏi: công nghệ giải quyết nhu cầu nào, dùng nguồn lực nào và tác động ra sao.',
+    ])
+  }
+
+  if (hasAnyKeyword(text, ['he thong ky thuat', 'dau vao', 'xu li', 'dau ra', 'dieu khien'])) {
+    return compactReply('Một hệ thống kĩ thuật nên phân tích theo 4 phần:', [
+      'Đầu vào: vật chất, năng lượng hoặc thông tin đi vào hệ thống.',
+      'Xử lí: các bộ phận, quy trình hoặc thuật toán biến đổi đầu vào.',
+      'Đầu ra: sản phẩm, chuyển động, tín hiệu hoặc kết quả hệ thống tạo ra.',
+      'Điều khiển: phần giám sát, phản hồi và điều chỉnh để hệ thống làm việc đúng.',
+    ])
+  }
+
+  if (hasAnyKeyword(text, ['ban ve', 'hinh chieu', 'hinh cat', 'mat cat', 'cad', 've ky thuat'])) {
+    return compactReply('Cách học nhanh chương Vẽ kĩ thuật:', [
+      'Trước hết quan sát vật thể và chọn hướng chiếu thể hiện rõ hình dạng nhất.',
+      'Dùng hình cắt hoặc mặt cắt khi cần thể hiện cấu tạo bên trong mà hình chiếu thường chưa đủ rõ.',
+      'CAD giúp tạo và sửa bản vẽ nhanh, nhưng vẫn phải đúng khổ giấy, nét vẽ, tỉ lệ, chữ viết và ghi kích thước.',
+    ])
+  }
+
+  if (hasAnyKeyword(text, ['thiet ke', 'quy trinh thiet ke', 'nguyen mau', 'cai tien', 'tieu chi'])) {
+    return compactReply('Quy trình thiết kế kĩ thuật có thể nhớ theo vòng lặp:', [
+      'Xác định vấn đề, nhu cầu, ràng buộc và tiêu chí đánh giá.',
+      'Nghiên cứu thông tin, đề xuất nhiều ý tưởng và chọn phương án khả thi.',
+      'Tạo mô hình hoặc nguyên mẫu, thử nghiệm theo tiêu chí rồi cải tiến.',
+    ], 'Điểm quan trọng: thiết kế kĩ thuật không kết thúc ở ý tưởng đầu tiên; cần thử, đo, sửa và hoàn thiện.')
   }
 
   const generalMechanicsReply = buildGeneralMechanicsReply(text, lesson)
@@ -180,7 +214,7 @@ const buildTutorReply = (message, lesson) => {
       .join('\n')}\n\nEm có thể hỏi cụ thể một bộ phận hoặc một kỳ để trợ lý giải thích ngắn gọn hơn.`
   }
 
-  return 'Trợ lý học tập có thể trả lời về: khái niệm động cơ đốt trong, chu trình 4 kỳ, piston, thanh truyền, trục khuỷu, xupap, bôi trơn, làm mát, nhiên liệu, đánh lửa, khởi động và xả khí.'
+  return 'Trợ lý học tập có thể trả lời về: công nghệ và đời sống, hệ thống kĩ thuật, công nghệ mới, đánh giá công nghệ, bản vẽ kĩ thuật, hình chiếu, hình cắt, CAD và quy trình thiết kế kĩ thuật.'
 }
 
 export default function ChatBot() {
@@ -204,7 +238,7 @@ export default function ChatBot() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  const sendMessage = (question) => {
+  const sendMessage = async (question) => {
     const cleanQuestion = question.trim()
     if (!cleanQuestion || isLoading) return
 
@@ -225,7 +259,21 @@ export default function ChatBot() {
       payload: { question: cleanQuestion },
     })
 
-    window.setTimeout(() => {
+    try {
+      const response = await chatAPI.message(user?.id, {
+        lesson_id: Number(lessonId),
+        session_id: `lesson-${lessonId}`,
+        user_message: cleanQuestion,
+      })
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `assistant-${Date.now()}`,
+          text: response.data?.ai_response || buildTutorReply(cleanQuestion, lesson),
+          sender: 'assistant',
+        },
+      ])
+    } catch {
       setMessages((prev) => [
         ...prev,
         {
@@ -234,8 +282,9 @@ export default function ChatBot() {
           sender: 'assistant',
         },
       ])
+    } finally {
       setIsLoading(false)
-    }, 250)
+    }
   }
 
   const handleSendMessage = (event) => {
@@ -250,7 +299,7 @@ export default function ChatBot() {
           <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="muted-label">EngineLab AI Assistant</p>
-            <h1 className="text-3xl font-bold text-violet-950">AI gia sư Công nghệ cơ khí</h1>
+            <h1 className="text-3xl font-bold text-violet-950">AI gia sư Công nghệ 10</h1>
             <p className="mt-2 max-w-2xl text-base leading-7 text-violet-900">{welcomeMessage}</p>
           </div>
           <div className="flex gap-2">
@@ -267,9 +316,9 @@ export default function ChatBot() {
           </div>
           </div>
           <div className="mt-4 grid gap-3 md:grid-cols-3">
-            <div className="rounded-lg bg-white px-4 py-3 text-sm font-bold text-violet-900 shadow-sm">Hỏi AI về động cơ</div>
+            <div className="rounded-lg bg-white px-4 py-3 text-sm font-bold text-violet-900 shadow-sm">Hỏi AI về công nghệ</div>
             <div className="rounded-lg bg-white px-4 py-3 text-sm font-bold text-violet-900 shadow-sm">AI gợi ý lỗi sai</div>
-            <div className="rounded-lg bg-white px-4 py-3 text-sm font-bold text-violet-900 shadow-sm">AI giải thích nguyên lý</div>
+            <div className="rounded-lg bg-white px-4 py-3 text-sm font-bold text-violet-900 shadow-sm">AI giải thích quy trình</div>
           </div>
         </div>
 
@@ -278,7 +327,7 @@ export default function ChatBot() {
             <div className="border-b border-slate-200 bg-white px-5 py-4">
               <h2 className="text-lg font-semibold text-slate-950">Phiên hỏi đáp</h2>
               <p className="text-base leading-7 text-slate-600">
-                Trợ lý trả lời theo nội dung Công nghệ 11, ưu tiên giải thích ngắn gọn và đúng trọng tâm.
+                Trợ lý trả lời theo nội dung Công nghệ 10, ưu tiên giải thích ngắn gọn và đúng trọng tâm.
               </p>
             </div>
 
@@ -287,7 +336,7 @@ export default function ChatBot() {
                 <div className="rounded-lg border border-dashed border-slate-300 bg-white p-6 text-center">
                   <p className="text-lg font-semibold text-slate-900">Bắt đầu bằng một câu hỏi</p>
                   <p className="mt-2 text-sm text-slate-600">
-                    Ví dụ: hỏi về kỳ nạp, kỳ nén, kỳ sinh công, piston, xupap, bôi trơn hoặc làm mát.
+                    Ví dụ: hỏi về hệ thống kĩ thuật, hình chiếu, hình cắt, CAD, tiêu chí đánh giá hoặc quy trình thiết kế.
                   </p>
                 </div>
               )}
@@ -328,7 +377,7 @@ export default function ChatBot() {
                   type="text"
                   value={inputValue}
                   onChange={(event) => setInputValue(event.target.value)}
-                  placeholder="Hỏi AI về động cơ, lỗi sai, nguyên lý hoặc bộ phận cơ khí..."
+                  placeholder="Hỏi AI về công nghệ, bản vẽ, CAD, quy trình thiết kế hoặc tiêu chí đánh giá..."
                   className="min-w-0 flex-1 rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                   disabled={isLoading}
                 />
@@ -359,9 +408,9 @@ export default function ChatBot() {
             <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
               <h2 className="font-semibold text-blue-950">Mẹo hỏi để được trả lời đúng</h2>
               <ul className="mt-3 space-y-2 text-sm text-blue-900">
-                <li>Hỏi rõ bộ phận: piston, trục khuỷu, xupap, bugi.</li>
-                <li>Hỏi rõ quá trình: kỳ nạp, kỳ nén, kỳ cháy, kỳ thải.</li>
-                <li>Hỏi theo hệ thống: bôi trơn, làm mát, nhiên liệu, đánh lửa.</li>
+                <li>Hỏi rõ khái niệm: công nghệ, kĩ thuật, hệ thống kĩ thuật.</li>
+                <li>Hỏi rõ biểu diễn: hình chiếu, hình cắt, mặt cắt, CAD.</li>
+                <li>Hỏi theo quy trình: xác định vấn đề, chọn phương án, thử nghiệm, cải tiến.</li>
               </ul>
             </div>
 

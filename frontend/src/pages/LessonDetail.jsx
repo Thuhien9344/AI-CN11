@@ -4,6 +4,7 @@ import toast from 'react-hot-toast'
 import { lessonsAPI } from '../services/api'
 import { useAuthStore } from '../store'
 import { getInteractiveActivity, getSampleLesson } from '../data/courseCatalog'
+import { getSimulationExperimentForLesson } from '../data/simulationExperiments'
 import { recordLocalLearningEvent } from '../utils/learningProgress'
 
 function InteractiveLearning({ activity }) {
@@ -259,6 +260,73 @@ function AIQuestionGenerator({ lesson }) {
   )
 }
 
+function SimulationExperiment({ lesson, experiment }) {
+  return (
+    <section className="panel overflow-hidden">
+      <div className="border-b border-cyan-100 bg-gradient-to-r from-cyan-50 via-white to-emerald-50 p-6">
+        <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
+          <div>
+            <p className="muted-label mb-1 text-cyan-700">Thí nghiệm mô phỏng đúng đơn vị kiến thức</p>
+            <h2 className="text-xl font-bold text-slate-950">{experiment.title}</h2>
+            <p className="mt-2 text-sm font-bold text-cyan-800">
+              {experiment.unit} · {experiment.duration}
+            </p>
+            <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">{experiment.objective}</p>
+          </div>
+          <Link to={`/lessons/${lesson?.id}/3d`} className="primary-button shrink-0">
+            Mở mô phỏng
+          </Link>
+        </div>
+      </div>
+
+      <div className="grid gap-4 p-6 lg:grid-cols-3">
+        <div className="rounded-lg border border-sky-100 bg-sky-50 p-4">
+          <h3 className="font-bold text-sky-950">Mô hình cần quan sát</h3>
+          <p className="mt-2 text-sm leading-6 text-sky-900">{experiment.modelFocus}</p>
+        </div>
+
+        <div className="rounded-lg border border-emerald-100 bg-emerald-50 p-4">
+          <h3 className="font-bold text-emerald-950">Các bước thí nghiệm</h3>
+          <ol className="mt-2 space-y-2 text-sm leading-6 text-emerald-900">
+            {experiment.setup.map((item, index) => (
+              <li key={item}>{index + 1}. {item}</li>
+            ))}
+          </ol>
+        </div>
+
+        <div className="rounded-lg border border-amber-100 bg-amber-50 p-4">
+          <h3 className="font-bold text-amber-950">Lưu ý an toàn</h3>
+          <p className="mt-2 text-sm leading-6 text-amber-900">{experiment.safety}</p>
+        </div>
+      </div>
+
+      <div className="grid gap-4 border-t border-slate-100 bg-white p-6 lg:grid-cols-2">
+        <div>
+          <h3 className="font-bold text-slate-950">Nhiệm vụ học sinh</h3>
+          <div className="mt-3 space-y-2">
+            {experiment.tasks.map((task) => (
+              <div key={task} className="rounded-md border border-slate-200 bg-slate-50 p-3 text-sm leading-6 text-slate-700">
+                {task}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <h3 className="font-bold text-slate-950">Câu hỏi quan sát</h3>
+          <div className="mt-3 space-y-2">
+            {experiment.observe.map((question) => (
+              <div key={question} className="rounded-md border border-cyan-100 bg-cyan-50 p-3 text-sm font-semibold leading-6 text-cyan-950">
+                {question}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
 export default function LessonDetail() {
   const { lessonId } = useParams()
   const user = useAuthStore((state) => state.user)
@@ -304,12 +372,19 @@ export default function LessonDetail() {
   if (isLoading) return <div className="page-container text-center text-slate-600">Đang tải...</div>
 
   const activity = getInteractiveActivity(lessonId)
+  const simulationExperiment = getSimulationExperimentForLesson(lesson)
+  const showCircuitLab = lesson?.grade_level === 12 && Number(lesson?.source_course_id || lesson?.course_id) >= 5
 
   return (
     <div className="page-container">
       <section className="mb-6 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-        <p className="muted-label mb-2">Bài học</p>
+        <p className="muted-label mb-2">{lesson?.grade_label || 'Bài học'}</p>
         <h1 className="text-3xl font-bold tracking-tight text-slate-950">{lesson?.title}</h1>
+        {lesson?.source_name && (
+          <p className="mt-2 inline-flex rounded-md bg-blue-50 px-3 py-1 text-xs font-black uppercase text-blue-700">
+            {lesson.source_name}
+          </p>
+        )}
         <p className="mt-3 max-w-4xl leading-7 text-slate-600">{lesson?.description}</p>
       </section>
 
@@ -405,6 +480,7 @@ export default function LessonDetail() {
             </section>
           )}
 
+          <SimulationExperiment lesson={lesson} experiment={simulationExperiment} />
           <InteractiveLearning activity={activity} />
           <AIQuestionGenerator lesson={lesson} />
         </main>
@@ -415,20 +491,22 @@ export default function LessonDetail() {
             <div className="mt-4 space-y-3">
               <Link to={`/lessons/${lessonId}/3d`} className="primary-button w-full">
                 <span className="mr-2 rounded bg-white/20 px-1.5 py-0.5 text-xs">N3D</span>
-                Mô phỏng Nova 3D theo chương
+                Mô phỏng Nova 3D theo bài
               </Link>
               <Link to={`/lessons/${lessonId}/chat`} className="secondary-button w-full">
                 <span className="mr-2 rounded bg-slate-100 px-1.5 py-0.5 text-xs">AI</span>
                 Trợ lý học tập
               </Link>
-              <Link to={`/lessons/${lessonId}/game`} className="secondary-button w-full">
-                <span className="mr-2 rounded bg-slate-100 px-1.5 py-0.5 text-xs">G</span>
-                Game luyện tập
-              </Link>
               <Link to={`/lessons/${lessonId}/design`} className="secondary-button w-full">
                 <span className="mr-2 rounded bg-slate-100 px-1.5 py-0.5 text-xs">S</span>
                 Vẽ sơ đồ hệ thống
               </Link>
+              {showCircuitLab && (
+                <Link to={`/lessons/${lessonId}/circuit-lab`} className="secondary-button w-full">
+                  <span className="mr-2 rounded bg-slate-100 px-1.5 py-0.5 text-xs">E</span>
+                  Thiết kế thí nghiệm mạch
+                </Link>
+              )}
               <Link to={`/lessons/${lessonId}/quiz`} className="secondary-button w-full">
                 <span className="mr-2 rounded bg-slate-100 px-1.5 py-0.5 text-xs">Q</span>
                 Kiểm tra nhanh
@@ -442,8 +520,7 @@ export default function LessonDetail() {
               <li>1. Đọc nội dung để nắm nhiệm vụ của bộ phận hoặc hệ thống.</li>
               <li>2. Mở Nova 3D để quan sát chuyển động và dòng năng lượng.</li>
               <li>3. Dùng trợ lý học tập để hỏi lại phần chưa hiểu.</li>
-              <li>4. Chơi game luyện tập để ghi nhớ thứ tự, bộ phận và tình huống kỹ thuật.</li>
-              <li>5. Làm kiểm tra nhanh để đánh giá khả năng liên hệ kiến thức.</li>
+              <li>4. Làm kiểm tra nhanh để đánh giá khả năng liên hệ kiến thức.</li>
             </ol>
           </section>
         </aside>

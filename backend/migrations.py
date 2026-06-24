@@ -21,6 +21,13 @@ def run_startup_migrations(engine):
         _add_column_if_missing(
             connection,
             inspector,
+            "users",
+            "student_class",
+            "student_class VARCHAR(50) DEFAULT ''",
+        )
+        _add_column_if_missing(
+            connection,
+            inspector,
             "quiz_results",
             "attempt_id",
             "attempt_id INTEGER REFERENCES quiz_attempts(id)",

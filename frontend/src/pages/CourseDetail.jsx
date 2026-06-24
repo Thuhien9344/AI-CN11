@@ -7,6 +7,7 @@ import {
   getSampleCourse,
   getSampleLessonsByCourse,
 } from '../data/courseCatalog'
+import { getSimulationExperimentsByLessons } from '../data/simulationExperiments'
 import { useAuthStore } from '../store'
 import {
   createReferenceMaterial,
@@ -28,6 +29,7 @@ export default function CourseDetail() {
   const [selectedMaterialFile, setSelectedMaterialFile] = useState(null)
   const [isUploadingMaterial, setIsUploadingMaterial] = useState(false)
   const chapterAssessments = getChapterAssessmentsByCourse(courseId)
+  const lessonExperiments = getSimulationExperimentsByLessons(lessons)
 
   useEffect(() => {
     fetchData()
@@ -121,10 +123,15 @@ export default function CourseDetail() {
       <section className="panel motion-shimmer mb-8 overflow-hidden">
         <div className="grid gap-0 lg:grid-cols-[1.3fr_0.7fr]">
           <div className="p-6 sm:p-8">
-            <p className="muted-label mb-2">Chủ đề học tập</p>
+            <p className="muted-label mb-2">{course?.grade_label || 'Chủ đề học tập'}</p>
             <h1 className="text-3xl font-bold tracking-tight text-slate-950">
               {course?.title}
             </h1>
+            {course?.source_name && (
+              <p className="mt-2 inline-flex rounded-md bg-blue-50 px-3 py-1 text-xs font-black uppercase text-blue-700">
+                {course.source_name}
+              </p>
+            )}
             <p className="mt-3 max-w-3xl leading-7 text-slate-600">{course?.description}</p>
           </div>
           <div className="border-t border-slate-200 bg-slate-50 p-6 lg:border-l lg:border-t-0">
@@ -185,6 +192,26 @@ export default function CourseDetail() {
                 <span>Gợi ý thời lượng</span>
                 <span className="font-semibold text-slate-900">2 giờ</span>
               </div>
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-cyan-200 bg-cyan-50 p-5">
+            <h3 className="font-bold text-cyan-950">Thí nghiệm mô phỏng theo bài</h3>
+            <p className="mt-2 text-sm leading-6 text-cyan-900">
+              Mỗi bài học có một thí nghiệm mô phỏng gắn với đúng đơn vị kiến thức để học sinh quan sát trước khi luyện tập.
+            </p>
+            <div className="mt-4 space-y-3">
+              {lessonExperiments.slice(0, 5).map(({ lesson, experiment }) => (
+                <Link
+                  key={lesson.id}
+                  to={`/lessons/${lesson.id}`}
+                  className="block rounded-lg border border-cyan-100 bg-white p-3 text-sm shadow-sm transition hover:border-cyan-300 hover:shadow-md"
+                >
+                  <p className="font-black text-slate-950">{lesson.title}</p>
+                  <p className="mt-1 font-semibold text-cyan-700">{experiment.unit}</p>
+                  <p className="mt-1 text-slate-600">{experiment.title}</p>
+                </Link>
+              ))}
             </div>
           </div>
 

@@ -22,7 +22,11 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    const token = localStorage.getItem('token')
+    const isLocalSession = token?.startsWith('local-token-')
+    const isAuthPage = ['/login', '/register'].includes(window.location.pathname)
+
+    if (error.response?.status === 401 && !isLocalSession && !isAuthPage) {
       localStorage.removeItem('token')
       window.location.href = '/login'
     }
@@ -94,6 +98,7 @@ export const learningAPI = {
     api.get(`/api/learning/users/${userId}/dashboard`, {
       params: { course_id: courseId },
     }),
+  getTeacherAnalytics: () => api.get('/api/learning/teacher/analytics'),
   getLessonProgress: (userId, lessonId) =>
     api.get(`/api/learning/users/${userId}/lessons/${lessonId}/progress`),
   updateLessonProgress: (userId, lessonId, data) =>

@@ -1,0 +1,16 @@
+{
+  "name": "EngineLab Công nghệ",
+  "short_name": "EngineLab",
+  "description": "Công cụ học tập môn Công nghệ THPT với bài học, quiz, mô phỏng 3D và lớp học.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#0369a1",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "64x64",
+      "type": "image/svg+xml"
+    }
+  ]
+}

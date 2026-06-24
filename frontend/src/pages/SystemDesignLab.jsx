@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { getSampleLesson } from '../data/courseCatalog'
 import { useAuthStore } from '../store'
@@ -33,6 +33,15 @@ const blockTypes = [
   { type: 'brake', label: 'Phanh', color: 'border-red-300 bg-red-50', stroke: '#ef4444' },
   { type: 'steering', label: 'Lái', color: 'border-teal-300 bg-teal-50', stroke: '#14b8a6' },
   { type: 'electrical', label: 'Điện - điều khiển', color: 'border-purple-300 bg-purple-50', stroke: '#9333ea' },
+  { type: 'source', label: 'Nguồn / tín hiệu vào', color: 'border-yellow-300 bg-yellow-50', stroke: '#ca8a04' },
+  { type: 'grid', label: 'Lưới điện', color: 'border-sky-300 bg-sky-50', stroke: '#0284c7' },
+  { type: 'load', label: 'Phụ tải / đầu ra', color: 'border-emerald-300 bg-emerald-50', stroke: '#059669' },
+  { type: 'protection', label: 'Bảo vệ', color: 'border-red-300 bg-red-50', stroke: '#dc2626' },
+  { type: 'sensor', label: 'Cảm biến', color: 'border-cyan-300 bg-cyan-50', stroke: '#0891b2' },
+  { type: 'logic', label: 'Logic / xử lí', color: 'border-violet-300 bg-violet-50', stroke: '#7c3aed' },
+  { type: 'program', label: 'Chương trình', color: 'border-indigo-300 bg-indigo-50', stroke: '#4f46e5' },
+  { type: 'actuator', label: 'Cơ cấu chấp hành', color: 'border-orange-300 bg-orange-50', stroke: '#ea580c' },
+  { type: 'feedback', label: 'Phản hồi', color: 'border-lime-300 bg-lime-50', stroke: '#65a30d' },
 ]
 
 const engineTemplate = {
@@ -149,13 +158,193 @@ const carTemplate = {
   ],
 }
 
+const researchProjectTemplate = {
+  title: 'Sơ đồ dự án nghiên cứu kĩ thuật cơ khí',
+  description:
+    'Bám chuyên đề Công nghệ cơ khí 11: xác định vấn đề, lập kế hoạch, chế tạo/thử nghiệm, đo kiểm, báo cáo và cải tiến sản phẩm.',
+  palette: ['requirement', 'design', 'material', 'processing', 'inspection', 'safety'],
+  blocks: [
+    { id: 'problem', type: 'requirement', title: 'Vấn đề nghiên cứu', note: 'Nhu cầu thực tiễn, mục tiêu, tiêu chí đánh giá và ràng buộc của dự án.', x: 70, y: 120 },
+    { id: 'plan', type: 'design', title: 'Ý tưởng - kế hoạch', note: 'Đề xuất phương án, phân công nhiệm vụ, chọn vật liệu, dụng cụ, tiến độ và an toàn.', x: 350, y: 120 },
+    { id: 'prototype', type: 'processing', title: 'Chế tạo mô hình', note: 'Gia công, lắp ráp, vận hành thử và ghi dữ liệu theo tiêu chí đã đặt ra.', x: 630, y: 120 },
+    { id: 'test', type: 'inspection', title: 'Thử nghiệm - đo kiểm', note: 'So sánh kết quả với tiêu chí, phát hiện lỗi và nguyên nhân.', x: 220, y: 360 },
+    { id: 'report', type: 'assembly', title: 'Báo cáo - cải tiến', note: 'Trình bày minh chứng, kết luận, phản biện và đề xuất cải tiến sản phẩm.', x: 540, y: 360 },
+  ],
+  links: [
+    { id: 'rp1', from: 'problem', to: 'plan', label: 'mục tiêu' },
+    { id: 'rp2', from: 'plan', to: 'prototype', label: 'phương án' },
+    { id: 'rp3', from: 'prototype', to: 'test', label: 'sản phẩm thử' },
+    { id: 'rp4', from: 'test', to: 'report', label: 'minh chứng' },
+    { id: 'rp5', from: 'test', to: 'plan', label: 'cải tiến' },
+  ],
+}
+
+const cncTemplate = {
+  title: 'Sơ đồ chuỗi CAD/CAM-CNC',
+  description:
+    'Bám chuyên đề CAD/CAM-CNC: thiết kế số bằng CAD, lập trình gia công bằng CAM, máy CNC thực hiện gia công và đo kiểm phản hồi.',
+  palette: ['requirement', 'design', 'control', 'processing', 'inspection', 'safety'],
+  blocks: [
+    { id: 'requirement', type: 'requirement', title: 'Yêu cầu chi tiết', note: 'Công dụng, vật liệu, kích thước, dung sai, độ nhẵn và số lượng cần chế tạo.', x: 70, y: 120 },
+    { id: 'cad', type: 'design', title: 'CAD', note: 'Tạo mô hình 2D/3D, bản vẽ kĩ thuật và dữ liệu thiết kế số.', x: 350, y: 120 },
+    { id: 'cam', type: 'control', title: 'CAM', note: 'Chọn dao, đường chạy dao, chế độ cắt, mô phỏng và xuất chương trình.', x: 630, y: 120 },
+    { id: 'cnc', type: 'processing', title: 'Máy CNC', note: 'Bộ điều khiển, trục chính, bàn máy, truyền động và dao gia công theo chương trình.', x: 220, y: 360 },
+    { id: 'measure', type: 'inspection', title: 'Đo kiểm', note: 'Kiểm tra kích thước, hình dạng, bề mặt và phản hồi để hiệu chỉnh.', x: 540, y: 360 },
+  ],
+  links: [
+    { id: 'cnc1', from: 'requirement', to: 'cad', label: 'thông số' },
+    { id: 'cnc2', from: 'cad', to: 'cam', label: 'mô hình số' },
+    { id: 'cnc3', from: 'cam', to: 'cnc', label: 'chương trình' },
+    { id: 'cnc4', from: 'cnc', to: 'measure', label: 'chi tiết' },
+    { id: 'cnc5', from: 'measure', to: 'cad', label: 'hiệu chỉnh' },
+  ],
+}
+
+const print3DTemplate = {
+  title: 'Sơ đồ quy trình công nghệ in 3D',
+  description:
+    'Bám chuyên đề in 3D: mô hình hóa, xuất tệp, cắt lớp, in từng lớp, hậu xử lí, đo kiểm và cải tiến thông số.',
+  palette: ['requirement', 'design', 'processing', 'material', 'inspection', 'safety'],
+  blocks: [
+    { id: 'need', type: 'requirement', title: 'Yêu cầu vật thể', note: 'Công dụng, kích thước, độ bền, độ nhẵn, vật liệu và điều kiện sử dụng.', x: 70, y: 110 },
+    { id: 'model', type: 'design', title: 'Mô hình 3D', note: 'Thiết kế hoặc quét mẫu, kiểm tra lỗi hình học và xuất STL/OBJ.', x: 350, y: 110 },
+    { id: 'slice', type: 'control', title: 'Cắt lớp', note: 'Thiết lập chiều cao lớp, mật độ điền đầy, hỗ trợ, nhiệt độ và tốc độ.', x: 630, y: 110 },
+    { id: 'print', type: 'processing', title: 'In từng lớp', note: 'Máy in đắp vật liệu theo mã lệnh để tạo hình vật thể.', x: 220, y: 360 },
+    { id: 'finish', type: 'inspection', title: 'Hậu xử lí - đo kiểm', note: 'Gỡ hỗ trợ, làm sạch, hoàn thiện bề mặt, đo kích thước và đánh giá lỗi.', x: 540, y: 360 },
+  ],
+  links: [
+    { id: 'p1', from: 'need', to: 'model', label: 'tiêu chí' },
+    { id: 'p2', from: 'model', to: 'slice', label: 'tệp 3D' },
+    { id: 'p3', from: 'slice', to: 'print', label: 'mã lệnh' },
+    { id: 'p4', from: 'print', to: 'finish', label: 'vật thể' },
+    { id: 'p5', from: 'finish', to: 'slice', label: 'tối ưu' },
+  ],
+}
+
+const powerGridTemplate = {
+  title: 'Sơ đồ hệ thống điện quốc gia',
+  description:
+    'Bám Công nghệ điện - điện tử 12: nguồn điện, truyền tải, trạm biến áp, phân phối, phụ tải, điều độ và bảo vệ.',
+  palette: ['source', 'grid', 'protection', 'control', 'load', 'feedback'],
+  blocks: [
+    { id: 'plant', type: 'source', title: 'Nguồn điện', note: 'Nhà máy điện hoặc nguồn tái tạo biến đổi năng lượng sơ cấp thành điện năng.', x: 70, y: 120 },
+    { id: 'transmission', type: 'grid', title: 'Lưới truyền tải', note: 'Điện áp cao truyền điện đi xa, giảm tổn thất trên đường dây.', x: 350, y: 120 },
+    { id: 'substation', type: 'protection', title: 'Trạm biến áp', note: 'Nâng hoặc hạ điện áp, đóng cắt, đo lường và bảo vệ.', x: 630, y: 120 },
+    { id: 'distribution', type: 'grid', title: 'Lưới phân phối', note: 'Cấp điện đến khu dân cư, trường học, cơ sở sản xuất và dịch vụ.', x: 220, y: 360 },
+    { id: 'load', type: 'load', title: 'Phụ tải', note: 'Thiết bị tiêu thụ điện cần đúng điện áp, đủ công suất và an toàn.', x: 540, y: 360 },
+  ],
+  links: [
+    { id: 'pg1', from: 'plant', to: 'transmission', label: 'điện năng' },
+    { id: 'pg2', from: 'transmission', to: 'substation', label: 'truyền tải' },
+    { id: 'pg3', from: 'substation', to: 'distribution', label: 'hạ áp' },
+    { id: 'pg4', from: 'distribution', to: 'load', label: 'cấp điện' },
+    { id: 'pg5', from: 'load', to: 'substation', label: 'dữ liệu tải' },
+  ],
+}
+
+const householdElectricTemplate = {
+  title: 'Sơ đồ mạng điện trong nhà',
+  description:
+    'Bám chuẩn mạng điện trong nhà: nguồn cấp, thiết bị bảo vệ, bảng điện, dây dẫn, thiết bị điều khiển, ổ cắm và phụ tải.',
+  palette: ['source', 'protection', 'control', 'load', 'safety', 'inspection'],
+  blocks: [
+    { id: 'source', type: 'source', title: 'Nguồn cấp', note: 'Điện từ lưới hạ áp đi vào công tơ, bảng điện hoặc tủ điện gia đình.', x: 70, y: 120 },
+    { id: 'breaker', type: 'protection', title: 'Aptomat / bảo vệ', note: 'Ngắt khi quá tải, ngắn mạch hoặc rò điện theo thông số phù hợp.', x: 350, y: 120 },
+    { id: 'wiring', type: 'control', title: 'Dây dẫn - bảng điện', note: 'Dây dẫn chọn đúng tiết diện, cách điện; bảng điện bố trí thuận tiện kiểm tra.', x: 630, y: 120 },
+    { id: 'switch', type: 'control', title: 'Công tắc / ổ cắm', note: 'Điều khiển đèn, cấp điện cho thiết bị và bảo đảm tiếp xúc an toàn.', x: 220, y: 360 },
+    { id: 'load', type: 'load', title: 'Đèn / thiết bị điện', note: 'Phụ tải sử dụng điện đúng công suất, đúng môi trường và đúng hướng dẫn.', x: 540, y: 360 },
+  ],
+  links: [
+    { id: 'he1', from: 'source', to: 'breaker', label: 'nguồn vào' },
+    { id: 'he2', from: 'breaker', to: 'wiring', label: 'bảo vệ' },
+    { id: 'he3', from: 'wiring', to: 'switch', label: 'đường dây' },
+    { id: 'he4', from: 'switch', to: 'load', label: 'điều khiển' },
+    { id: 'he5', from: 'load', to: 'breaker', label: 'dòng tải' },
+  ],
+}
+
+const electronicsTemplate = {
+  title: 'Sơ đồ khối nhiệm vụ mạch điện tử số',
+  description:
+    'Bám Công nghệ 12: cảm biến, chuẩn hóa tín hiệu, mức logic 0/1, cổng logic, vi điều khiển, driver, đầu ra và phản hồi.',
+  palette: ['source', 'sensor', 'logic', 'control', 'actuator', 'feedback'],
+  blocks: [
+    { id: 'input', type: 'source', title: 'Tình huống / tín hiệu vào', note: 'Khói, nhiệt độ cao, ánh sáng, nút nhấn hoặc trạng thái công tắc được quy ước thành điều kiện 0/1.', x: 70, y: 110 },
+    { id: 'sensor', type: 'sensor', title: 'Cảm biến và chuẩn hóa', note: 'Cảm biến tạo tín hiệu điện; khối chuẩn hóa đưa tín hiệu về mức logic ổn định để xử lí.', x: 350, y: 110 },
+    { id: 'logic', type: 'logic', title: 'Cổng logic AND / OR / NOT', note: 'Tạo quyết định theo bảng chân lí: đủ điều kiện, một trong nhiều điều kiện hoặc đảo trạng thái.', x: 630, y: 110 },
+    { id: 'mcu', type: 'program', title: 'Vi điều khiển / thuật toán', note: 'Đọc mức logic, kiểm tra điều kiện, chống nhiễu đơn giản và phát lệnh điều khiển.', x: 70, y: 380 },
+    { id: 'driver', type: 'control', title: 'Driver công suất', note: 'Transistor, rơle hoặc IC driver khuếch dòng và cách li khối xử lí với tải.', x: 350, y: 380 },
+    { id: 'output', type: 'actuator', title: 'Đầu ra và phản hồi', note: 'Còi, LED, quạt, rơle hoặc màn hình hoạt động; phản hồi giúp kiểm tra mạch đúng yêu cầu.', x: 630, y: 380 },
+  ],
+  links: [
+    { id: 'el1', from: 'input', to: 'sensor', label: 'đại lượng vào' },
+    { id: 'el2', from: 'sensor', to: 'logic', label: 'mức 0/1' },
+    { id: 'el3', from: 'logic', to: 'mcu', label: 'điều kiện logic' },
+    { id: 'el4', from: 'mcu', to: 'driver', label: 'lệnh điều khiển' },
+    { id: 'el5', from: 'driver', to: 'output', label: 'công suất' },
+    { id: 'el6', from: 'output', to: 'mcu', label: 'phản hồi' },
+  ],
+}
+
+const microcontrollerTemplate = {
+  title: 'Sơ đồ dự án vi điều khiển',
+  description:
+    'Bám chuẩn vi điều khiển 12: yêu cầu, cảm biến, chương trình, vi điều khiển, cơ cấu chấp hành, kiểm thử và cải tiến.',
+  palette: ['requirement', 'sensor', 'program', 'logic', 'actuator', 'inspection'],
+  blocks: [
+    { id: 'task', type: 'requirement', title: 'Yêu cầu điều khiển', note: 'Thiết bị cần điều khiển, điều kiện kích hoạt, tiêu chí hoạt động và an toàn.', x: 70, y: 110 },
+    { id: 'input', type: 'sensor', title: 'Đầu vào', note: 'Nút nhấn, cảm biến ánh sáng, nhiệt độ, khoảng cách hoặc tín hiệu số.', x: 350, y: 110 },
+    { id: 'code', type: 'program', title: 'Thuật toán - chương trình', note: 'Khởi tạo, đọc đầu vào, xử lí điều kiện, điều khiển đầu ra và lặp lại.', x: 630, y: 110 },
+    { id: 'mcu', type: 'logic', title: 'Vi điều khiển', note: 'Bộ xử lí, bộ nhớ, chân vào/ra, giao tiếp và nguồn cấp.', x: 220, y: 360 },
+    { id: 'actuator', type: 'actuator', title: 'Thiết bị chấp hành', note: 'LED, rơle, động cơ, còi hoặc màn hình nhận lệnh từ vi điều khiển.', x: 540, y: 360 },
+  ],
+  links: [
+    { id: 'mc1', from: 'task', to: 'input', label: 'điều kiện' },
+    { id: 'mc2', from: 'input', to: 'mcu', label: 'tín hiệu vào' },
+    { id: 'mc3', from: 'code', to: 'mcu', label: 'nạp chương trình' },
+    { id: 'mc4', from: 'mcu', to: 'actuator', label: 'tín hiệu ra' },
+    { id: 'mc5', from: 'actuator', to: 'task', label: 'kiểm tra' },
+  ],
+}
+
 const getDiagramTemplate = (lesson) => {
-  if (!lesson) return engineTemplate
-  if (lesson.id === 302) return safetyTemplate
-  if (lesson.course_id === 2) return materialTemplate
-  if (lesson.course_id === 4) return engineTemplate
-  if (lesson.course_id === 5) return carTemplate
+  if (!lesson) return electronicsTemplate
+  const sourceLessonId = lesson.source_id || lesson.id
+  const sourceCourseId = lesson.source_course_id || lesson.course_id
+
+  if (lesson.grade_level === 10) {
+    if (sourceCourseId === 2) return materialTemplate
+    return manufacturingTemplate
+  }
+
+  if (lesson.grade_level === 11) {
+    if (sourceCourseId === 1) return researchProjectTemplate
+    if (sourceCourseId === 2) return cncTemplate
+    if (sourceCourseId === 3) return print3DTemplate
+    return researchProjectTemplate
+  }
+
+  if (lesson.grade_level === 12) {
+    if (sourceCourseId === 2) return powerGridTemplate
+    if (sourceCourseId === 3 || sourceCourseId === 4) return householdElectricTemplate
+    if (sourceCourseId === 9) return microcontrollerTemplate
+    if (sourceCourseId >= 5) return electronicsTemplate
+    return powerGridTemplate
+  }
+
+  if (sourceLessonId === 302) return safetyTemplate
+  if (sourceCourseId === 2) return materialTemplate
+  if (sourceCourseId === 4) return engineTemplate
+  if (sourceCourseId === 5) return carTemplate
   return manufacturingTemplate
+}
+
+const getTemplateByQuery = (templateKey, lesson) => {
+  if (templateKey === 'digital' || templateKey === 'electronics') return electronicsTemplate
+  if (templateKey === 'microcontroller') return microcontrollerTemplate
+  if (templateKey === 'home-electric' || templateKey === 'safety-electric') return householdElectricTemplate
+  if (templateKey === 'power-grid') return powerGridTemplate
+  return getDiagramTemplate(lesson)
 }
 
 const readDesigns = () => {
@@ -200,10 +389,12 @@ const getAnchor = (fromBlock, toBlock) => {
 
 export default function SystemDesignLab() {
   const { lessonId } = useParams()
+  const [searchParams] = useSearchParams()
   const { user } = useAuthStore()
   const boardRef = useRef(null)
   const lesson = lessonId ? getSampleLesson(lessonId) : null
-  const currentTemplate = getDiagramTemplate(lesson)
+  const templateKey = searchParams.get('template')
+  const currentTemplate = getTemplateByQuery(templateKey, lesson)
   const paletteTypes = blockTypes.filter((item) => currentTemplate.palette.includes(item.type))
   const [blocks, setBlocks] = useState(currentTemplate.blocks)
   const [links, setLinks] = useState(currentTemplate.links)
@@ -213,7 +404,7 @@ export default function SystemDesignLab() {
   const [designTitle, setDesignTitle] = useState(currentTemplate.title)
 
   const selectedBlock = blocks.find((block) => block.id === selectedBlockId)
-  const designKey = `${user?.id || user?.username || 'guest'}-${lessonId || 'general'}`
+  const designKey = `${user?.id || user?.username || 'guest'}-${lessonId || templateKey || 'digital'}`
 
   const completion = useMemo(() => {
     const coreTypes = currentTemplate.palette.slice(0, Math.min(5, currentTemplate.palette.length))

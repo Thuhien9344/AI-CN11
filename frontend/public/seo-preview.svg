@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="EngineLab Cong nghe">
+  <rect width="1200" height="630" fill="#f8fafc"/>
+  <rect x="72" y="72" width="1056" height="486" rx="32" fill="#0369a1"/>
+  <circle cx="984" cy="156" r="84" fill="#22d3ee" opacity=".9"/>
+  <circle cx="912" cy="462" r="132" fill="#14b8a6" opacity=".55"/>
+  <path d="M150 406V160h286v70H238v52h176v68H238v56h210v72H150z" fill="#fff"/>
+  <text x="492" y="246" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="58" font-weight="800">EngineLab Cong nghe</text>
+  <text x="494" y="326" fill="#dff7ff" font-family="Arial, Helvetica, sans-serif" font-size="34" font-weight="700">Cong cu hoc tap Cong nghe THPT</text>
+  <text x="496" y="392" fill="#e0f2fe" font-family="Arial, Helvetica, sans-serif" font-size="28">Bai hoc tuong tac - Quiz - Mo phong 3D - Lop hoc</text>
+</svg>

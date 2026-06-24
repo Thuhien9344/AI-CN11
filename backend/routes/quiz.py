@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
 
+from auth import can_manage_content, get_authenticated_user
 from database import get_db
 from models import LearningEvent, LessonProgress, QuizAttempt, QuizResult, Question, User
 from schemas import QuizAttemptResponse, QuizResultResponse, QuizResultCreate
@@ -9,13 +10,24 @@ from schemas import QuizAttemptResponse, QuizResultResponse, QuizResultCreate
 router = APIRouter(prefix="/api", tags=["Quiz"])
 
 
+def ensure_user_scope(target_user_id: int, current_user: User) -> None:
+    if current_user.id == target_user_id or can_manage_content(current_user):
+        return
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="You can only access your own quiz data.",
+    )
+
+
 @router.post("/quiz/submit", response_model=QuizResultResponse, status_code=status.HTTP_201_CREATED)
 async def submit_quiz_answer(
     user_id: int,
     result_data: QuizResultCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_authenticated_user),
 ):
     """Submit an answer to a quiz question."""
+    ensure_user_scope(user_id, current_user)
     # Verify user exists
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
@@ -156,8 +168,10 @@ async def get_user_attempts(
     skip: int = 0,
     limit: int = 50,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_authenticated_user),
 ):
     """Get quiz attempts for a user, grouped by lesson/session."""
+    ensure_user_scope(user_id, current_user)
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(
@@ -182,9 +196,11 @@ async def get_user_results(
     user_id: int,
     skip: int = 0,
     limit: int = 50,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_authenticated_user),
 ):
     """Get all quiz results for a user."""
+    ensure_user_scope(user_id, current_user)
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(

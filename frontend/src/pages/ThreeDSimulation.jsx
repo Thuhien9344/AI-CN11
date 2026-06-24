@@ -4,6 +4,7 @@ import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { lessonsAPI, nova3dAPI } from '../services/api'
 import { getSampleLesson } from '../data/courseCatalog'
+import { getSimulationExperimentForLesson } from '../data/simulationExperiments'
 import { useAuthStore } from '../store'
 import { recordLocalLearningEvent } from '../utils/learningProgress'
 
@@ -284,15 +285,307 @@ const knttSimulations = {
   },
 }
 
+const technology10Simulations = {
+  1: {
+    modelId: 1,
+    label: 'KNTT 10 - Chương I',
+    title: 'Đại cương về công nghệ',
+    subtitle: 'Công nghệ, hệ thống kĩ thuật, công nghệ mới và đánh giá công nghệ',
+    objective:
+      'Mô phỏng cách một nhu cầu đời sống được chuyển thành giải pháp công nghệ: xác định vấn đề, thiết kế hệ thống, triển khai công nghệ và đánh giá tác động.',
+    layers: [
+      { id: 'requirement', name: 'Nhu cầu', note: 'Xác định vấn đề, người dùng, bối cảnh và tiêu chí cần đạt.' },
+      { id: 'design', name: 'Hệ thống kĩ thuật', note: 'Phân tích đầu vào, xử lí, đầu ra và điều khiển của giải pháp.' },
+      { id: 'manufacture', name: 'Công nghệ triển khai', note: 'Chọn công nghệ phổ biến hoặc công nghệ mới phù hợp nguồn lực.' },
+      { id: 'inspection', name: 'Đánh giá công nghệ', note: 'So sánh hiệu quả, chi phí, an toàn, môi trường và tác động xã hội.' },
+    ],
+    checkpoints: [
+      'Công nghệ là giải pháp, quy trình, tri thức và phương tiện để giải quyết nhu cầu thực tiễn.',
+      'Hệ thống kĩ thuật có thể phân tích theo đầu vào, xử lí, đầu ra và điều khiển.',
+      'Đánh giá công nghệ giúp chọn giải pháp phù hợp, không chỉ chọn giải pháp hiện đại nhất.',
+    ],
+    teacherPrompts: [
+      'Một công nghệ mới có luôn là lựa chọn tốt nhất không? Vì sao?',
+      'Khi đánh giá một sản phẩm công nghệ, em cần xét những tiêu chí nào?',
+    ],
+  },
+  2: {
+    modelId: 2,
+    label: 'KNTT 10 - Chương II',
+    title: 'Vẽ kĩ thuật',
+    subtitle: 'Từ vật thể, hình biểu diễn đến bản vẽ CAD',
+    objective:
+      'Mô phỏng quy trình đọc và tạo bản vẽ kĩ thuật: quan sát vật thể, chọn cách biểu diễn, ghi kích thước, kiểm tra tiêu chuẩn và CAD hóa.',
+    layers: [
+      { id: 'material', name: 'Vật thể', note: 'Nhận diện hình dạng, lỗ, rãnh, cạnh khuất và phần cần biểu diễn.' },
+      { id: 'blank', name: 'Hình biểu diễn', note: 'Chọn hình chiếu vuông góc, hình cắt, mặt cắt, trục đo hoặc phối cảnh.' },
+      { id: 'machining', name: 'Tiêu chuẩn bản vẽ', note: 'Dùng đúng khổ giấy, tỉ lệ, nét vẽ, chữ viết, kí hiệu và ghi kích thước.' },
+      { id: 'measure', name: 'CAD', note: 'Tạo, sửa, lưu trữ và chia sẻ bản vẽ nhanh, chính xác, dễ cập nhật.' },
+    ],
+    checkpoints: [
+      'Bản vẽ kĩ thuật là ngôn ngữ chung trong thiết kế, chế tạo và thi công.',
+      'Hình cắt, mặt cắt giúp biểu diễn cấu tạo bên trong khi hình chiếu chưa đủ rõ.',
+      'CAD tăng tốc thao tác nhưng vẫn phải tuân thủ tiêu chuẩn trình bày bản vẽ.',
+    ],
+    teacherPrompts: [
+      'Khi nào nên dùng hình cắt thay vì chỉ dùng hình chiếu?',
+      'Vì sao bản vẽ CAD vẫn cần đúng tiêu chuẩn kĩ thuật?',
+    ],
+  },
+  3: {
+    modelId: 1,
+    label: 'KNTT 10 - Chương III',
+    title: 'Thiết kế kĩ thuật',
+    subtitle: 'Từ vấn đề thực tiễn đến nguyên mẫu và cải tiến',
+    objective:
+      'Mô phỏng vòng lặp thiết kế kĩ thuật tốc độ cao: xác định vấn đề, đề xuất giải pháp, tạo nguyên mẫu, thử nghiệm và cải tiến.',
+    layers: [
+      { id: 'requirement', name: 'Vấn đề - tiêu chí', note: 'Làm rõ nhu cầu, ràng buộc, điều kiện sử dụng và tiêu chí đánh giá.' },
+      { id: 'design', name: 'Ý tưởng - phương án', note: 'Phác thảo, sơ đồ hóa, mô hình hóa và so sánh nhiều giải pháp.' },
+      { id: 'manufacture', name: 'Nguyên mẫu', note: 'Chế tạo mẫu nhanh bằng vật liệu, CAD, mô phỏng hoặc in 3D phù hợp.' },
+      { id: 'inspection', name: 'Thử nghiệm - cải tiến', note: 'Đo kết quả, ghi lỗi, lấy phản hồi và hoàn thiện thiết kế.' },
+    ],
+    checkpoints: [
+      'Thiết kế kĩ thuật là hoạt động giải quyết vấn đề thực tiễn bằng giải pháp kĩ thuật.',
+      'Quy trình thiết kế là vòng lặp, có thử nghiệm và cải tiến.',
+      'Giải pháp tốt cần cân bằng công năng, an toàn, chi phí, thẩm mĩ và môi trường.',
+    ],
+    teacherPrompts: [
+      'Vì sao thiết kế kĩ thuật cần tạo nguyên mẫu trước khi hoàn thiện?',
+      'Nếu phương án rẻ nhưng không an toàn, có nên chọn không?',
+    ],
+  },
+}
+
+const mechanical11SpecializedSimulations = {
+  1: {
+    modelId: 1,
+    label: 'KNTT 11 - Chuyên đề I',
+    title: 'Dự án nghiên cứu kĩ thuật cơ khí',
+    subtitle: 'Từ vấn đề thực tiễn đến mô hình, đo kiểm, báo cáo và cải tiến',
+    objective:
+      'Mô phỏng lộ trình học theo dự án cơ khí: xác định vấn đề, lập kế hoạch, chế tạo mô hình, thử nghiệm, đo kiểm, báo cáo và phản biện.',
+    layers: [
+      { id: 'requirement', name: 'Vấn đề', note: 'Xác định nhu cầu, mục tiêu, tiêu chí, ràng buộc và minh chứng cần thu thập.' },
+      { id: 'design', name: 'Kế hoạch', note: 'Đề xuất phương án, phân công nhiệm vụ, chọn vật liệu, dụng cụ, tiến độ và an toàn.' },
+      { id: 'manufacture', name: 'Chế tạo thử', note: 'Gia công, lắp ráp, vận hành mô hình và ghi dữ liệu thử nghiệm.' },
+      { id: 'inspection', name: 'Đo kiểm - báo cáo', note: 'So sánh kết quả với tiêu chí, nêu lỗi, cải tiến và trình bày minh chứng.' },
+    ],
+    checkpoints: [
+      'Dự án cơ khí phải bắt đầu từ vấn đề hoặc nhu cầu thực tế.',
+      'Sản phẩm dự án cần có tiêu chí đánh giá, dữ liệu thử nghiệm và minh chứng kĩ thuật.',
+      'Báo cáo tốt không chỉ mô tả sản phẩm mà còn giải thích quyết định thiết kế và hướng cải tiến.',
+    ],
+    teacherPrompts: [
+      'Tiêu chí nào chứng minh mô hình cơ khí đã hoạt động đúng yêu cầu?',
+      'Nếu thử nghiệm không đạt, cần quay lại khâu ý tưởng, vật liệu hay chế tạo?',
+    ],
+  },
+  2: {
+    modelId: 2,
+    label: 'KNTT 11 - Chuyên đề II',
+    title: 'Chuỗi CAD/CAM-CNC',
+    subtitle: 'Thiết kế số, lập trình gia công, vận hành CNC và đo kiểm',
+    objective:
+      'Mô phỏng chuỗi sản xuất hiện đại: CAD tạo dữ liệu thiết kế, CAM tạo đường chạy dao, CNC gia công chi tiết và đo kiểm phản hồi.',
+    layers: [
+      { id: 'material', name: 'Yêu cầu chi tiết', note: 'Công dụng, vật liệu, kích thước, dung sai, bề mặt và số lượng sản phẩm.' },
+      { id: 'blank', name: 'CAD', note: 'Tạo mô hình 2D/3D và bản vẽ kĩ thuật làm dữ liệu đầu vào.' },
+      { id: 'machining', name: 'CAM - CNC', note: 'Chọn dao, đường chạy dao, mô phỏng, xuất chương trình và máy CNC gia công.' },
+      { id: 'measure', name: 'Đo kiểm', note: 'Kiểm tra kích thước, hình dạng, bề mặt và phản hồi để hiệu chỉnh.' },
+    ],
+    checkpoints: [
+      'CAD, CAM và CNC tạo thành chuỗi thiết kế - chế tạo số.',
+      'Mô phỏng CAM giúp phát hiện va chạm hoặc sai đường chạy dao trước khi gia công thật.',
+      'Đo kiểm là căn cứ để xác nhận chi tiết đạt yêu cầu hoặc cần hiệu chỉnh chương trình.',
+    ],
+    teacherPrompts: [
+      'Vì sao không nên chạy CNC khi chưa mô phỏng đường chạy dao?',
+      'Sai số kích thước có thể đến từ CAD, CAM, gá đặt hay dao cắt?',
+    ],
+  },
+  3: {
+    modelId: 1,
+    label: 'KNTT 11 - Chuyên đề III',
+    title: 'Công nghệ in 3D',
+    subtitle: 'Mô hình 3D, cắt lớp, in từng lớp, hậu xử lí và cải tiến',
+    objective:
+      'Mô phỏng công nghệ chế tạo đắp lớp: từ mô hình số đến cắt lớp, in vật thể, hậu xử lí, đo kiểm và tối ưu thông số.',
+    layers: [
+      { id: 'requirement', name: 'Yêu cầu vật thể', note: 'Xác định công dụng, kích thước, vật liệu, độ bền, độ nhẵn và tiêu chí đánh giá.' },
+      { id: 'design', name: 'Mô hình 3D', note: 'Thiết kế hoặc quét mẫu, kiểm tra lỗi hình học và xuất dữ liệu STL/OBJ.' },
+      { id: 'manufacture', name: 'Cắt lớp - in', note: 'Thiết lập chiều cao lớp, mật độ điền đầy, hỗ trợ, nhiệt độ, tốc độ và in từng lớp.' },
+      { id: 'inspection', name: 'Hậu xử lí', note: 'Gỡ hỗ trợ, làm sạch, đo kiểm, đánh giá lỗi in và cải tiến thông số.' },
+    ],
+    checkpoints: [
+      'In 3D là công nghệ chế tạo đắp lớp từ dữ liệu mô hình số.',
+      'Chất lượng vật thể phụ thuộc vào thiết kế, vật liệu, thông số cắt lớp và điều kiện in.',
+      'Hậu xử lí và đo kiểm giúp xác nhận sản phẩm mẫu có đạt tiêu chí hay không.',
+    ],
+    teacherPrompts: [
+      'Thông số nào làm thay đổi thời gian in và độ bền vật thể?',
+      'Khi vật thể bị cong vênh, nên kiểm tra mô hình, bàn in hay nhiệt độ?',
+    ],
+  },
+}
+
+const industrial12Simulations = {
+  1: {
+    modelId: 1,
+    label: 'KNTT 12 - Chương I',
+    title: 'Kĩ thuật điện trong đời sống',
+    subtitle: 'Vai trò, thiết bị, vận hành an toàn và định hướng nghề nghiệp',
+    objective:
+      'Mô phỏng cách kĩ thuật điện chuyển đổi, phân phối, điều khiển và sử dụng điện năng trong đời sống hiện đại.',
+    layers: [
+      { id: 'requirement', name: 'Nhu cầu điện năng', note: 'Sản xuất, sinh hoạt, giao thông và công nghệ số cần điện ổn định.' },
+      { id: 'design', name: 'Thiết bị điện', note: 'Máy điện, khí cụ điện, dây dẫn, thiết bị đo, bảo vệ và điều khiển.' },
+      { id: 'manufacture', name: 'Vận hành', note: 'Lắp đặt, đo kiểm, bảo trì và sử dụng đúng thông số.' },
+      { id: 'inspection', name: 'An toàn', note: 'Cách điện, bảo vệ, nối đất và quy trình thao tác giúp giảm tai nạn.' },
+    ],
+    checkpoints: [
+      'Kĩ thuật điện là nền tảng của sản xuất, đời sống và chuyển đổi năng lượng.',
+      'Hệ thống điện phải bảo đảm an toàn, tin cậy, tiết kiệm và hiệu quả.',
+      'Người học cần biết đọc sơ đồ, đo kiểm và tuân thủ quy trình an toàn.',
+    ],
+    teacherPrompts: [
+      'Vì sao nghề điện yêu cầu thao tác chính xác và tuân thủ quy trình?',
+      'Thiết bị bảo vệ có vai trò gì khi hệ thống điện gặp sự cố?',
+    ],
+  },
+  2: {
+    modelId: 4,
+    label: 'KNTT 12 - Chương II',
+    title: 'Hệ thống điện quốc gia',
+    subtitle: 'Nguồn điện, truyền tải, phân phối, phụ tải và điều độ',
+    objective:
+      'Mô phỏng dòng điện năng từ nhà máy điện qua lưới truyền tải, trạm biến áp, lưới phân phối đến phụ tải.',
+    layers: [
+      { id: 'cnc', name: 'Nguồn điện', note: 'Nhà máy điện hoặc nguồn tái tạo biến đổi năng lượng sơ cấp thành điện năng.' },
+      { id: 'robot', name: 'Truyền tải', note: 'Điện áp cao giúp truyền điện đi xa và giảm tổn thất.' },
+      { id: 'sensor', name: 'Điều độ - bảo vệ', note: 'Đo lường, bảo vệ, điều khiển và giám sát giúp hệ thống ổn định.' },
+      { id: 'safety', name: 'Phụ tải', note: 'Nhà ở, trường học, nhà máy và dịch vụ nhận điện đúng cấp điện áp.' },
+    ],
+    checkpoints: [
+      'Hệ thống điện quốc gia gồm nguồn điện, lưới điện, phụ tải và điều khiển - bảo vệ.',
+      'Truyền tải điện áp cao giúp giảm tổn thất khi đưa điện đi xa.',
+      'Lưới điện thông minh tăng khả năng giám sát, tự động hóa và tích hợp năng lượng tái tạo.',
+    ],
+    teacherPrompts: [
+      'Vì sao cần trạm biến áp trong hệ thống điện?',
+      'Nguồn năng lượng tái tạo làm hệ thống điện cần điều khiển linh hoạt hơn như thế nào?',
+    ],
+  },
+  3: {
+    modelId: 2,
+    label: 'KNTT 12 - Chương III/IV',
+    title: 'Mạng điện trong nhà và an toàn điện',
+    subtitle: 'Nguồn cấp, bảo vệ, dây dẫn, điều khiển, phụ tải và kiểm tra',
+    objective:
+      'Mô phỏng mạng điện gia đình theo sơ đồ nguồn, thiết bị bảo vệ, dây dẫn, công tắc, ổ cắm, phụ tải và nguyên tắc an toàn.',
+    layers: [
+      { id: 'material', name: 'Nguồn cấp', note: 'Điện từ lưới vào công tơ, bảng điện hoặc tủ điện gia đình.' },
+      { id: 'blank', name: 'Bảo vệ', note: 'Aptomat, cầu chì, thiết bị chống rò và nối đất phòng sự cố.' },
+      { id: 'machining', name: 'Dây dẫn - điều khiển', note: 'Chọn tiết diện, cách điện, bố trí công tắc, ổ cắm và bảng điện.' },
+      { id: 'measure', name: 'Phụ tải - kiểm tra', note: 'Thiết bị sử dụng điện cần đúng công suất, môi trường và được kiểm tra định kì.' },
+    ],
+    checkpoints: [
+      'Mạng điện trong nhà phải thuận tiện, an toàn, tin cậy và dễ kiểm tra.',
+      'Thiết bị bảo vệ phải chọn đúng thông số để ngắt khi quá tải, ngắn mạch hoặc rò điện.',
+      'Khi có sự cố điện phải ngắt nguồn trước khi xử lí hoặc cứu người.',
+    ],
+    teacherPrompts: [
+      'Sơ đồ nguyên lí khác sơ đồ lắp đặt ở điểm nào?',
+      'Vì sao không được thay cầu chì hoặc aptomat bằng loại sai định mức?',
+    ],
+  },
+  5: {
+    modelId: 8,
+    label: 'KNTT 12 - Điện tử',
+    title: 'Thí nghiệm mô phỏng mạch điện tử',
+    subtitle: 'Nguồn thấp áp, cảm biến, xử lí tín hiệu, cổng logic, driver và đầu ra',
+    objective:
+      'Mô phỏng một mạch điện tử học sinh có thể quan sát theo sơ đồ khối: tín hiệu vào được cảm biến thu nhận, chuẩn hóa, xử lí logic rồi điều khiển LED/còi qua driver công suất.',
+    layers: [
+      { id: 'input', name: 'Tín hiệu vào', note: 'Nút nhấn, cảm biến khói, ánh sáng hoặc nhiệt độ tạo trạng thái 0/1 cho mạch.' },
+      { id: 'sensor', name: 'Cảm biến - chuẩn hóa', note: 'Cảm biến và mạch điện trở/khuếch đại/so sánh đưa tín hiệu về mức logic ổn định.' },
+      { id: 'logic', name: 'Cổng logic', note: 'AND, OR, NOT hoặc IC logic quyết định đầu ra theo bảng chân lí.' },
+      { id: 'microcontroller', name: 'Vi điều khiển', note: 'Đọc tín hiệu, chống nhiễu đơn giản, xử lí điều kiện và phát lệnh điều khiển.' },
+      { id: 'driver', name: 'Driver công suất', note: 'Transistor, rơle hoặc IC driver khuếch dòng để bảo vệ khối xử lí khi điều khiển tải.' },
+      { id: 'output', name: 'Đầu ra', note: 'LED, còi, quạt nhỏ hoặc rơle báo trạng thái hoạt động của mạch.' },
+    ],
+    checkpoints: [
+      'Mạch điện tử thí nghiệm nên dùng nguồn thấp áp và kiểm tra cực tính linh kiện trước khi cấp nguồn.',
+      'Tín hiệu số thường được quy ước bằng hai mức logic 0 và 1; cổng logic tạo quyết định từ các mức này.',
+      'Vi điều khiển không nên cấp trực tiếp dòng lớn cho tải; cần transistor, rơle hoặc driver trung gian.',
+      'Đo kiểm từng khối giúp tìm lỗi nhanh hơn: nguồn, cảm biến, logic, chương trình, driver và đầu ra.',
+    ],
+    teacherPrompts: [
+      'Nếu cảm biến khói = 1 và cảm biến nhiệt = 1 thì dùng cổng AND hay OR để kích còi? Vì sao?',
+      'Vì sao phải đặt điện trở hạn dòng cho LED?',
+      'Nếu LED không sáng, em sẽ kiểm tra lần lượt những khối nào?',
+    ],
+  },
+  8: {
+    modelId: 8,
+    label: 'KNTT 12 - Chương VIII',
+    title: 'Thí nghiệm mạch điện tử số',
+    subtitle: 'Cảm biến, mức logic 0/1, cổng AND/OR/NOT, vi điều khiển và đầu ra cảnh báo',
+    objective:
+      'Mô phỏng thí nghiệm mạch báo cháy/đèn cảnh báo dùng tín hiệu số. Học sinh quan sát đường đi tín hiệu, thay đổi điều kiện vào và giải thích vì sao đầu ra bật hoặc tắt.',
+    layers: [
+      { id: 'input', name: 'Tín hiệu vào 0/1', note: 'Cảm biến khói, cảm biến nhiệt hoặc nút nhấn tạo tín hiệu logic đầu vào.' },
+      { id: 'sensor', name: 'Chuẩn hóa tín hiệu', note: 'Mạch điện trở, lọc nhiễu hoặc so sánh giúp tín hiệu đủ rõ để đưa vào cổng logic.' },
+      { id: 'logic', name: 'Cổng logic', note: 'Cổng AND/OR/NOT tạo điều kiện báo động theo bảng chân lí.' },
+      { id: 'microcontroller', name: 'Vi điều khiển', note: 'Có thể đọc tín hiệu logic, xử lí thêm thời gian trễ, ghi trạng thái và phát lệnh.' },
+      { id: 'driver', name: 'Driver', note: 'Transistor hoặc rơle nhận lệnh dòng nhỏ và điều khiển tải dòng lớn hơn.' },
+      { id: 'output', name: 'LED / còi báo', note: 'Đầu ra sáng hoặc kêu khi điều kiện logic đúng.' },
+    ],
+    checkpoints: [
+      'Bảng chân lí giúp dự đoán chính xác đầu ra của mạch số.',
+      'Cổng AND yêu cầu tất cả điều kiện đúng; cổng OR chỉ cần ít nhất một điều kiện đúng; cổng NOT đảo trạng thái.',
+      'Driver bảo vệ vi điều khiển và cho phép điều khiển tải cần dòng lớn hơn.',
+      'Một mạch thí nghiệm tốt cần có nguồn thấp áp, điện trở hạn dòng, nối đất chung và kiểm tra cực tính.',
+    ],
+    teacherPrompts: [
+      'Nếu chỉ cần một trong hai cảm biến phát hiện nguy hiểm thì nên dùng cổng nào?',
+      'Nếu muốn nút tắt khẩn cấp làm đầu ra tắt ngay, tín hiệu đó nên đặt ở đâu trong logic?',
+    ],
+  },
+  9: {
+    modelId: 7,
+    label: 'KNTT 12 - Chương IX',
+    title: 'Dự án vi điều khiển',
+    subtitle: 'Đầu vào, chương trình, xử lí, đầu ra, kiểm thử và cải tiến',
+    objective:
+      'Mô phỏng hệ thống vi điều khiển: đọc cảm biến hoặc nút nhấn, chạy chương trình, điều khiển thiết bị và kiểm thử theo tiêu chí.',
+    layers: [
+      { id: 'powertrain', name: 'Yêu cầu', note: 'Xác định điều kiện kích hoạt, thiết bị cần điều khiển và tiêu chí an toàn.' },
+      { id: 'transmission', name: 'Đầu vào', note: 'Nút nhấn, cảm biến ánh sáng, nhiệt độ, khoảng cách hoặc tín hiệu số.' },
+      { id: 'chassis', name: 'Vi điều khiển', note: 'Bộ xử lí, bộ nhớ, chân vào/ra và chương trình phối hợp xử lí.' },
+      { id: 'control', name: 'Đầu ra', note: 'LED, rơle, động cơ, còi hoặc màn hình nhận lệnh điều khiển.' },
+    ],
+    checkpoints: [
+      'Chương trình vi điều khiển thường gồm khởi tạo, đọc đầu vào, xử lí, điều khiển đầu ra và lặp lại.',
+      'Kết nối vào/ra phải đúng điện áp, dòng điện, cực tính và chân tín hiệu.',
+      'Kiểm thử từng phần giúp phát hiện lỗi nối dây, lỗi nguồn hoặc lỗi chương trình.',
+    ],
+    teacherPrompts: [
+      'Vì sao không nên nối trực tiếp động cơ lớn vào chân vi điều khiển?',
+      'Một dự án điều khiển thiết bị cần những tiêu chí kiểm tra nào?',
+    ],
+  },
+}
+
 const getSimulationKey = (lesson) => {
-  if (!lesson) return 6
-  if (lesson.id === 201) return 2
-  if (lesson.id === 202) return 3
-  if (lesson.id === 301 || lesson.id === 302) return 4
-  if (lesson.id === 401) return 5
-  if (lesson.id === 402) return 6
-  if (lesson.id === 501 || lesson.id === 502) return 7
-  return 1
+  if (!lesson) return 1
+  return lesson.source_course_id || lesson.course_id || 1
+}
+
+const getIndustrial12Simulation = (simulationKey) => {
+  if (simulationKey === 4) return industrial12Simulations[3]
+  if (simulationKey >= 5 && simulationKey <= 8) return industrial12Simulations[simulationKey] || industrial12Simulations[5]
+  return industrial12Simulations[simulationKey] || industrial12Simulations[1]
 }
 
 const dieselFourStrokeSimulation = {
@@ -889,6 +1182,118 @@ function buildChapterModel(courseId, engineMode = 'twoStroke') {
     addAnnotation(annotations, root, 'chassis', courseId === 5 ? 'Bộ phận công tác / bánh xe' : 'Bánh xe - hệ thống treo', courseId === 5 ? 'Nơi nhận công suất để thực hiện chuyển động hoặc công việc' : 'Bánh xe tiếp xúc đường; treo giảm dao động và giữ ổn định', 1.7, 0.75, 0.9)
   }
 
+  if (courseId === 8) {
+    const board = box(6.4, 0.18, 3.2, 0xf8fafc)
+    board.name = 'sensor'
+    board.position.set(0, -0.1, 0)
+    root.add(board)
+    addAnnotation(annotations, root, 'sensor', 'Breadboard / bo mạch', 'Nền lắp ráp thí nghiệm, các khối dùng chung nguồn thấp áp và GND.', 0, 0.28, -1.55)
+
+    const railPositive = box(6.1, 0.06, 0.08, 0xef4444)
+    railPositive.name = 'input'
+    railPositive.position.set(0, 0.05, -1.35)
+    root.add(railPositive)
+    const railGround = box(6.1, 0.06, 0.08, 0x2563eb)
+    railGround.name = 'input'
+    railGround.position.set(0, 0.05, 1.35)
+    root.add(railGround)
+    addAnnotation(annotations, root, 'input', 'Nguồn 5V / GND', 'Nguồn thấp áp cấp cho cảm biến, IC logic, vi điều khiển và đầu ra.', -2.65, 0.36, -1.35)
+
+    const switchBlock = box(0.72, 0.34, 0.62, 0x38bdf8)
+    switchBlock.name = 'input'
+    switchBlock.position.set(-2.65, 0.28, -0.55)
+    root.add(switchBlock)
+    addAnnotation(annotations, root, 'input', 'Nút nhấn / tín hiệu 0-1', 'Khi nhấn, tín hiệu vào đổi trạng thái logic.', -2.65, 0.85, -0.55)
+
+    const sensorBlock = cylinder(0.34, 0.28, 0x22c55e)
+    sensorBlock.name = 'sensor'
+    sensorBlock.position.set(-2.65, 0.32, 0.55)
+    root.add(sensorBlock)
+    addAnnotation(annotations, root, 'sensor', 'Cảm biến', 'Thu khói, nhiệt, ánh sáng hoặc trạng thái môi trường và tạo tín hiệu điện.', -2.65, 0.9, 0.55)
+
+    const conditioner = box(0.82, 0.28, 0.82, 0xa7f3d0)
+    conditioner.name = 'sensor'
+    conditioner.position.set(-1.45, 0.28, 0)
+    root.add(conditioner)
+    addAnnotation(annotations, root, 'sensor', 'Chuẩn hóa tín hiệu', 'Điện trở kéo, lọc nhiễu hoặc so sánh đưa tín hiệu về mức logic ổn định.', -1.45, 0.84, 0)
+
+    const logicIc = box(1.05, 0.24, 0.92, 0x7c3aed)
+    logicIc.name = 'logic'
+    logicIc.position.set(-0.18, 0.32, 0)
+    root.add(logicIc)
+    ;[-0.58, -0.34, -0.1, 0.14, 0.38].forEach((x) => {
+      const pinTop = box(0.06, 0.12, 0.18, 0xe5e7eb)
+      pinTop.name = 'logic'
+      pinTop.position.set(x, 0.28, -0.56)
+      root.add(pinTop)
+      const pinBottom = box(0.06, 0.12, 0.18, 0xe5e7eb)
+      pinBottom.name = 'logic'
+      pinBottom.position.set(x, 0.28, 0.56)
+      root.add(pinBottom)
+    })
+    addAnnotation(annotations, root, 'logic', 'IC cổng logic', 'AND, OR, NOT tạo quyết định đầu ra theo bảng chân lí.', -0.18, 0.9, 0)
+
+    const mcu = box(1.15, 0.26, 1.05, 0x312e81)
+    mcu.name = 'microcontroller'
+    mcu.position.set(1.2, 0.32, 0)
+    root.add(mcu)
+    addAnnotation(annotations, root, 'microcontroller', 'Vi điều khiển', 'Đọc tín hiệu logic, xử lí điều kiện, chống nhiễu và phát lệnh điều khiển.', 1.2, 0.92, 0)
+
+    const driver = box(0.86, 0.28, 0.72, 0xf97316)
+    driver.name = 'driver'
+    driver.position.set(2.38, 0.3, 0)
+    root.add(driver)
+    const transistor = cylinder(0.18, 0.18, 0x111827)
+    transistor.name = 'driver'
+    transistor.position.set(2.38, 0.58, -0.48)
+    root.add(transistor)
+    addAnnotation(annotations, root, 'driver', 'Transistor / driver', 'Khuếch dòng và bảo vệ khối xử lí khi điều khiển còi, LED hoặc rơle.', 2.38, 0.92, 0)
+
+    const led = new THREE.Mesh(new THREE.SphereGeometry(0.26, 32, 32), material(0xef4444, 0.88))
+    led.name = 'output'
+    led.material.userData.dynamicOpacity = true
+    led.position.set(3.35, 0.52, -0.48)
+    root.add(led)
+    const buzzer = cylinder(0.32, 0.22, 0xfacc15)
+    buzzer.name = 'output'
+    buzzer.position.set(3.35, 0.42, 0.48)
+    root.add(buzzer)
+    addAnnotation(annotations, root, 'output', 'LED / còi báo', 'Đầu ra bật khi điều kiện logic đúng.', 3.35, 1.0, 0)
+
+    const wires = [
+      ['input', -2.28, -0.55, -1.82, -0.1, 0x0ea5e9],
+      ['sensor', -2.22, 0.38, -1.85, 0.12, 0x22c55e],
+      ['sensor', -1.04, 0, -0.72, 0, 0x22c55e],
+      ['logic', 0.36, 0, 0.62, 0, 0x8b5cf6],
+      ['microcontroller', 1.78, 0, 1.96, 0, 0x6366f1],
+      ['driver', 2.78, 0, 3.04, -0.32, 0xf97316],
+      ['output', 2.78, 0, 3.04, 0.36, 0xfacc15],
+    ]
+    wires.forEach(([layerId, x1, z1, x2, z2, color]) => {
+      const dx = x2 - x1
+      const dz = z2 - z1
+      const length = Math.sqrt(dx * dx + dz * dz)
+      const wire = box(length, 0.045, 0.045, color, 0.86)
+      wire.name = layerId
+      wire.position.set((x1 + x2) / 2, 0.36, (z1 + z2) / 2)
+      wire.rotation.y = -Math.atan2(dz, dx)
+      root.add(wire)
+    })
+
+    const signalPulse = createFlowArrow(0.58, 0x38bdf8)
+    signalPulse.name = 'logic'
+    signalPulse.traverse((part) => {
+      if (part.material) part.material.userData.dynamicOpacity = true
+    })
+    signalPulse.position.set(0.54, 0.72, -0.9)
+    root.add(signalPulse)
+
+    animated.push(
+      { mesh: signalPulse, type: 'transfer' },
+      { mesh: led, type: 'spark' }
+    )
+  }
+
   return { root, animated, annotations }
 }
 
@@ -937,10 +1342,15 @@ export default function ThreeDSimulation() {
   }, [user?.id, lessonId])
 
   const simulationKey = getSimulationKey(lesson)
-  const simulation = knttSimulations[simulationKey] || knttSimulations[6]
+  const simulation = lesson?.grade_level === 12
+    ? getIndustrial12Simulation(simulationKey)
+    : lesson?.grade_level === 11
+      ? mechanical11SpecializedSimulations[simulationKey] || mechanical11SpecializedSimulations[1]
+      : technology10Simulations[simulationKey] || technology10Simulations[1]
   const displayedSimulation = simulation.modelId === 6 && engineMode === 'diesel4'
     ? dieselFourStrokeSimulation
     : simulation
+  const simulationExperiment = getSimulationExperimentForLesson(lesson)
   const shouldUseNovaApi = false
   const activeLayer = selectedLayer === 'all'
     ? { name: 'Tổng quan', note: displayedSimulation.objective }
@@ -1050,8 +1460,15 @@ export default function ThreeDSimulation() {
     const scene = new THREE.Scene()
     scene.background = new THREE.Color(0xf5f7fb)
     const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 1000)
-    camera.position.set(0, 3.5, 7.2)
-    camera.lookAt(0, 0.3, 0)
+    if (simulation.modelId === 8) {
+      camera.fov = 50
+      camera.position.set(0, 5.7, 8.8)
+      camera.lookAt(0, 0.2, 0)
+    } else {
+      camera.position.set(0, 3.5, 7.2)
+      camera.lookAt(0, 0.3, 0)
+    }
+    camera.updateProjectionMatrix()
 
     const renderer = new THREE.WebGLRenderer({ antialias: true })
     renderer.setPixelRatio(window.devicePixelRatio)
@@ -1075,6 +1492,10 @@ export default function ThreeDSimulation() {
     scene.add(base)
 
     const { root, animated, annotations } = buildChapterModel(simulation.modelId, engineMode)
+    if (simulation.modelId === 8) {
+      root.scale.setScalar(0.78)
+      root.position.set(0, -0.18, 0.12)
+    }
     scene.add(root)
 
     if (novaModelUrl) {
@@ -1134,7 +1555,7 @@ export default function ThreeDSimulation() {
 
     const animate = () => {
       if (isPlaying) angle += 0.025 * speed
-      root.rotation.y = Math.sin(angle * 0.25) * 0.18
+      root.rotation.y = simulation.modelId === 8 ? 0 : Math.sin(angle * 0.25) * 0.18
 
       const step = Math.floor((((angle % (Math.PI * 2)) + Math.PI * 2) / (Math.PI * 2)) * displayedSimulation.layers.length)
       if (step !== lastStep) {
@@ -1315,6 +1736,15 @@ export default function ThreeDSimulation() {
           <p className="muted-label">Phòng mô phỏng Nova 3D</p>
           <h2 className="mt-2 text-2xl font-bold text-slate-950">{lesson?.title}</h2>
           <p className="mt-3 text-sm leading-6 text-slate-600">{displayedSimulation.objective}</p>
+
+          <section className="mt-5 rounded-lg border border-cyan-200 bg-cyan-50 p-4 text-cyan-950">
+            <p className="text-xs font-black uppercase tracking-wide text-cyan-700">Thí nghiệm của bài này</p>
+            <h3 className="mt-1 font-bold">{simulationExperiment.title}</h3>
+            <p className="mt-2 text-sm leading-6">{simulationExperiment.modelFocus}</p>
+            <div className="mt-3 rounded-md bg-white p-3 text-sm font-semibold text-slate-700">
+              Thời lượng gợi ý: {simulationExperiment.duration}
+            </div>
+          </section>
 
           {simulation.modelId === 6 && (
             <section className="mt-5 rounded-lg border border-slate-200 bg-white p-2">

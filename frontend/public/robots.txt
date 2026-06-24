@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+Disallow: /lessons/
+Disallow: /courses/
+Disallow: /progress
+Disallow: /classroom
+Disallow: /games
+Disallow: /contests
+Disallow: /practice-bank
+Disallow: /projection-practice
+Disallow: /design-lab
+

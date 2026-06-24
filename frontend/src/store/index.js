@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { authAPI } from '../services/api'
+import { authAPI, coursesAPI, lessonsAPI } from '../services/api'
 
 const LOCAL_USERS_KEY = 'local_auth_users'
 const LOCAL_CURRENT_USER_KEY = 'local_auth_current_user'
@@ -263,10 +263,8 @@ export const useCoursesStore = create((set, get) => ({
   fetchCourses: async (skip = 0, limit = 10) => {
     set({ isLoading: true, error: null })
     try {
-      const response = await fetch(`/api/courses?skip=${skip}&limit=${limit}`)
-      if (!response.ok) throw new Error('Failed to fetch courses')
-      const data = await response.json()
-      set({ courses: data, isLoading: false })
+      const response = await coursesAPI.list(skip, limit)
+      set({ courses: response.data, isLoading: false })
     } catch (error) {
       set({ error: error.message, isLoading: false })
     }
@@ -285,10 +283,8 @@ export const useLessonsStore = create((set) => ({
   fetchLessons: async (courseId) => {
     set({ isLoading: true, error: null })
     try {
-      const response = await fetch(`/api/courses/${courseId}/lessons`)
-      if (!response.ok) throw new Error('Failed to fetch lessons')
-      const data = await response.json()
-      set({ lessons: data, isLoading: false })
+      const response = await lessonsAPI.list(courseId)
+      set({ lessons: response.data, isLoading: false })
     } catch (error) {
       set({ error: error.message, isLoading: false })
     }

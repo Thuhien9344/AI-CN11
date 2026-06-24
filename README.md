@@ -1,265 +1,166 @@
-# AI Education System
+# EngineLab AI - EdTech Graduation Project
 
-An AI-powered educational platform with interactive 3D simulations, AI chatbot tutoring, gamified learning, and comprehensive analytics.
+EngineLab AI is an EdTech web application for high-school Technology learning. It combines structured lessons, interactive 3D simulations, quizzes, an AI Tutor, classroom workflows, reference materials, and learning analytics for teacher/student use.
 
-## 🎯 Features
+## Main Features
 
-- **Student Dashboard**: Personalized learning experience
-- **AI Chatbot**: Real-time Q&A with AI mentor
-- **3D Simulation Engine**: Interactive 3D models for visual learning
-- **Quiz & Games**: Gamified learning with scoring system
-- **Progress Tracking**: Analytics and learning analytics dashboard
-- **Responsive UI**: Works on desktop, tablet, and mobile
+- Student learning path, lesson detail pages, quiz practice, warm-up games, and 3D simulation activities.
+- AI Tutor for lesson-focused Q&A with chat history and learning-event tracking.
+- Personal Learning Analytics: progress, quiz score, time spent, mastery, engagement, risk score, weak lessons, and suggested learning path.
+- Teacher Analytics: class overview, at-risk students, weak knowledge units, and intervention suggestions.
+- Classroom: announcements, assignments, submissions, grading, and reference materials.
+- Role-based access control for `student`, `teacher`, `admin`, and `moderator`.
 
-## 🏗️ Architecture
+## Tech Stack
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                   Frontend (React + Vite)                   │
-│  Dashboard │ Chat │ 3D Sim │ Quiz │ Profile │ Analytics   │
-└────────────────────────┬────────────────────────────────────┘
-                         │ HTTP/WebSocket
-┌────────────────────────┴────────────────────────────────────┐
-│              Backend API (FastAPI + Python)                 │
-│  Auth │ Lessons │ Questions │ Quiz │ Chat │ Analytics      │
-└────────────────┬──────────────┬──────────────┬──────────────┘
-                 │              │              │
-        ┌────────┴────┐  ┌──────┴──────┐  ┌──────┴────────┐
-        │ PostgreSQL  │  │ Redis       │  │ LLM Service  │
-        │ (Data)      │  │ (Cache)     │  │ (Mistral/...)│
-        └─────────────┘  └─────────────┘  └──────────────┘
-```
+- Frontend: React 18, Vite, Tailwind CSS, Zustand, Axios, Three.js.
+- Backend: FastAPI, SQLAlchemy, Pydantic v2, JWT auth.
+- Database: SQLite by default for local demo; configurable for PostgreSQL.
 
-## 🚀 Quick Start
+## Project Structure
 
-### Prerequisites
-- Docker & Docker Compose
-- Python 3.11+ (for local development)
-- Node.js 18+ (for local development)
-
-### Using Docker Compose (Recommended)
-
-```bash
-# Clone repository
-git clone <repository-url>
-cd AI-CN11
-
-# Start all services
-docker-compose up
-
-# Access the application
-# Frontend: http://localhost:5173
-# Backend API: http://localhost:8000
-# API Docs: http://localhost:8000/docs
-```
-
-### Local Development
-
-#### Backend
-
-```bash
-cd backend
-
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Set up database (make sure PostgreSQL is running)
-# Update DATABASE_URL in .env if needed
-
-# Run backend
-python -m uvicorn main:app --reload
-```
-
-#### Frontend
-
-```bash
-cd frontend
-
-# Install dependencies
-npm install
-
-# Start development server
-npm run dev
-```
-
-## 📁 Project Structure
-
-```
+```text
 AI-CN11/
-├── backend/                    # FastAPI backend
-│   ├── models/                # Database models
-│   ├── schemas/               # Pydantic schemas
-│   ├── routes/                # API endpoints
-│   ├── services/              # Business logic
-│   ├── auth/                  # Authentication
-│   ├── main.py                # FastAPI app entry
-│   ├── config.py              # Configuration
-│   ├── database.py            # Database setup
-│   ├── requirements.txt        # Python dependencies
-│   └── .env                   # Environment variables
-│
-├── frontend/                   # React Vite frontend
-│   ├── src/
-│   │   ├── components/        # React components
-│   │   ├── pages/             # Page components
-│   │   ├── services/          # API client
-│   │   ├── store/             # State management
-│   │   ├── hooks/             # Custom hooks
-│   │   └── App.jsx            # App component
-│   ├── package.json           # Node dependencies
-│   └── vite.config.js         # Vite config
-│
-├── docker-compose.yml         # Docker Compose configuration
-├── .gitignore                 # Git ignore rules
-└── README.md                  # This file
+  backend/
+    auth/            JWT, password hashing, role dependencies
+    models/          SQLAlchemy models
+    routes/          API routers
+    schemas/         Pydantic request/response schemas
+    config.py        Environment settings
+    database.py      SQLAlchemy engine/session
+    main.py          FastAPI app entry
+  frontend/
+    src/
+      components/    Shared UI
+      data/          Demo curriculum and simulations
+      pages/         App screens
+      services/      API client
+      store/         Zustand stores
+      utils/         Local analytics fallback
 ```
 
-## 🔌 API Endpoints
+## Requirements
 
-### Authentication
-- `POST /api/auth/register` - Register new user
-- `POST /api/auth/login` - Login and get JWT token
-- `GET /api/auth/me` - Get current user info
+- Node.js 18+
+- Python 3.11+ recommended
+- Optional: Docker and Docker Compose
 
-### Courses & Lessons
-- `GET /api/courses` - List all courses
-- `POST /api/courses` - Create new course
-- `GET /api/courses/{id}/lessons` - Get lessons for course
-- `POST /api/lessons` - Create lesson
-- `GET /api/lessons/{id}` - Get lesson details
+On Windows PowerShell, use `npm.cmd` if `npm.ps1` is blocked by execution policy.
 
-### Questions & Quiz
-- `POST /api/questions` - Create question
-- `GET /api/lessons/{id}/questions` - Get questions for lesson
-- `POST /api/quiz/submit` - Submit quiz answer
-- `GET /api/quiz/results/user/{id}` - Get user quiz results
+## Backend Setup
 
-### Chat
-- `POST /api/chat/message` - Send chat message
-- `GET /api/chat/history/{user_id}` - Get chat history
-- `WebSocket /ws/chat/{user_id}` - Real-time chat
-
-## 🔐 Environment Variables
-
-Create `.env` files in `backend/` and `frontend/`:
-
-### Backend `.env`
-```
-DATABASE_URL=postgresql://ai_user:ai_password@localhost:5432/ai_education
-REDIS_URL=redis://localhost:6379/0
-SECRET_KEY=your-secret-key
-DEBUG=True
-AI_MODEL=mistral
+```powershell
+cd backend
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+python -m uvicorn main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-### Frontend `.env`
+Backend runs at:
+
+- API: `http://127.0.0.1:8000`
+- Swagger UI: `http://127.0.0.1:8000/docs`
+- Health check: `http://127.0.0.1:8000/health`
+
+## Frontend Setup
+
+```powershell
+cd frontend
+npm.cmd install
+npm.cmd run dev -- --host 127.0.0.1 --port 5173
 ```
-VITE_API_URL=http://localhost:8000
+
+Frontend runs at:
+
+- `http://localhost:5173`
+- Login page: `http://localhost:5173/login`
+
+Create `frontend/.env` if the backend is on a custom URL:
+
+```env
+VITE_API_URL=http://127.0.0.1:8000
 ```
 
-## 📚 Tech Stack
+## Environment Variables
 
-### Backend
-- **Framework**: FastAPI
-- **Database**: PostgreSQL
-- **Cache**: Redis
-- **ORM**: SQLAlchemy
-- **Auth**: JWT, bcrypt
-- **AI**: OpenAI API / LLaMA / Mistral
+Backend settings use the `ENGINE_LAB_` prefix. Create `backend/.env` when needed:
 
-### Frontend
-- **Framework**: React 18
-- **Build**: Vite
-- **3D**: Three.js
-- **State**: Zustand / Context API
-- **HTTP**: Axios
-- **UI**: Tailwind CSS
+```env
+ENGINE_LAB_DEBUG=true
+ENGINE_LAB_DATABASE_URL=sqlite:///../ai_education.db
+ENGINE_LAB_SECRET_KEY=change-this-secret
+ENGINE_LAB_ACCESS_TOKEN_EXPIRE_MINUTES=120
+ENGINE_LAB_CORS_ORIGINS=["http://localhost:5173","http://127.0.0.1:5173"]
+```
 
-## 🔧 Development
+Optional Nova3D integration:
 
-### Running Tests
+```env
+ENGINE_LAB_NOVA3D_AUTH_TOKEN=...
+ENGINE_LAB_NOVA3D_PROVIDER_API_KEY=...
+```
 
-```bash
-# Backend tests
+## Roles and Permissions
+
+- `student`: learns lessons, submits quizzes, asks AI Tutor, submits assignments, views own analytics.
+- `teacher`: manages classroom content, assignments, materials, course/lesson/question content, and teacher analytics.
+- `admin` / `moderator`: can manage teacher-facing content.
+
+Students can only access their own learning, quiz, and chat data. Teachers/admins can inspect class-level analytics and student evidence for intervention.
+
+## Useful API Endpoints
+
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `GET /api/auth/me`
+- `GET /api/courses`
+- `GET /api/courses/{course_id}/lessons`
+- `POST /api/chat/message?user_id={id}`
+- `POST /api/quiz/submit?user_id={id}`
+- `GET /api/learning/users/{user_id}/dashboard`
+- `GET /api/learning/teacher/analytics`
+- `GET /api/classroom/posts`
+- `GET /api/classroom/assignments`
+- `GET /api/materials`
+
+## Testing and Build
+
+```powershell
+# Backend
 cd backend
 pytest
 
 # Frontend tests
 cd frontend
-npm test
+npm.cmd test -- --run
+
+# Frontend production build
+npm.cmd run build
 ```
 
-### Code Quality
+The current repository may not contain many test files yet, so `pytest` or `vitest` can report no collected tests. Use the build and backend import checks as smoke tests during development.
 
-```bash
-# Backend linting
-cd backend
-flake8 .
+## Local Demo Notes
 
-# Frontend linting
-cd frontend
-npm run lint
+The frontend includes a local-auth fallback for classroom demos when the backend is unavailable. When the backend is running, real JWT auth and role checks are used. Local analytics are also kept as a fallback, then merged with backend analytics when available.
+
+## Docker
+
+```powershell
+docker compose up --build
 ```
 
-## 📊 Database Schema
+Default service URLs:
 
-### Core Tables
-- **users**: User accounts and authentication
-- **courses**: Educational courses
-- **lessons**: Individual lessons within courses
-- **questions**: Quiz questions and their options
-- **quiz_results**: Student quiz responses and scores
-- **chat_history**: AI chatbot interaction logs
-- **user_courses**: User enrollment in courses
+- Frontend: `http://localhost:5173`
+- Backend: `http://localhost:8000`
 
-## 🚀 Deployment
+## Graduation Project Positioning
 
-### Docker Production Build
+EngineLab AI is structured as a scalable EdTech prototype:
 
-```bash
-docker-compose -f docker-compose.yml build
-docker-compose -f docker-compose.yml up -d
-```
-
-### Environment for Production
-- Change `DEBUG=False`
-- Set strong `SECRET_KEY`
-- Use managed PostgreSQL service
-- Set up proper CORS origins
-- Enable HTTPS
-
-## 📝 API Documentation
-
-Interactive API documentation available at:
-- Swagger UI: `http://localhost:8000/docs`
-- ReDoc: `http://localhost:8000/redoc`
-
-## 🤝 Contributing
-
-1. Create feature branch: `git checkout -b feature/amazing-feature`
-2. Commit changes: `git commit -m 'Add amazing feature'`
-3. Push to branch: `git push origin feature/amazing-feature`
-4. Open Pull Request
-
-## 📄 License
-
-This project is open source and available under the MIT License.
-
-## 📞 Support
-
-For support, email support@aieducation.example or create an issue in the repository.
-
-## 🎓 Learning Resources
-
-- [FastAPI Documentation](https://fastapi.tiangolo.com/)
-- [React Documentation](https://react.dev/)
-- [Three.js Documentation](https://threejs.org/docs/)
-- [SQLAlchemy Documentation](https://docs.sqlalchemy.org/)
-
----
-
-**Built with ❤️ for educators and learners**
+- Clear separation between frontend, backend, database, and optional AI/3D services.
+- Role-aware workflows for teachers and students.
+- Learning analytics based on evidence: lesson views, simulations, AI questions, quiz attempts, time spent, and scores.
+- AI Tutor designed to support explanation, remediation, and personalized recommendations.

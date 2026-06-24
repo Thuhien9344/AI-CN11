@@ -73,7 +73,7 @@ export default function Register() {
 
     if (result.success) {
       toast.success('Tạo tài khoản thành công. Bạn có thể đăng nhập.')
-      navigate('/login')
+      navigate('/login', { state: { role: formData.role, username: formData.username } })
     } else {
       toast.error(result.error || error || 'Tạo tài khoản thất bại')
     }
@@ -85,11 +85,11 @@ export default function Register() {
     <main className="px-4 py-8 sm:px-6 lg:px-8">
       <section className="mx-auto w-full max-w-6xl overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
         <div className="grid lg:grid-cols-[360px_1fr]">
-          <aside className="bg-slate-950 p-7 text-white sm:p-8">
+          <aside className="auth-light-panel bg-gradient-to-br from-sky-50 via-cyan-50 to-emerald-50 p-7 text-slate-950 sm:p-8">
             <p className="text-xs font-black uppercase tracking-[0.22em] text-blue-300">Tài khoản Công nghệ THPT</p>
             <h1 className="mt-4 text-3xl font-black leading-tight">Tham gia EngineLab Công nghệ</h1>
-            <p className="mt-4 text-sm leading-7 text-slate-300">
-              Hệ thống chỉ phục vụ môn Công nghệ THPT, tập trung vào học liệu, nhiệm vụ, mô phỏng, game luyện tập và
+            <p className="mt-4 text-sm leading-7 text-slate-700">
+              Hệ thống chỉ phục vụ môn Công nghệ THPT, tập trung vào học liệu, nhiệm vụ, mô phỏng, quiz và
               đánh giá năng lực.
             </p>
 
@@ -101,23 +101,23 @@ export default function Register() {
                   onClick={() => chooseRole(role.value)}
                   className={`w-full rounded-lg border p-4 text-left transition ${
                     formData.role === role.value
-                      ? 'border-blue-300 bg-blue-500/15'
-                      : 'border-slate-800 bg-slate-900/80 hover:border-slate-600'
+                      ? 'border-sky-300 bg-white text-slate-950 shadow-md ring-2 ring-sky-100'
+                      : 'border-sky-100 bg-white/75 text-slate-700 hover:border-sky-200 hover:bg-white'
                   }`}
                 >
                   <div className="flex items-center justify-between gap-3">
                     <span className="font-black">{role.title}</span>
-                    <span className={`h-3 w-3 rounded-full ${formData.role === role.value ? 'bg-blue-300' : 'bg-slate-600'}`} />
+                    <span className={`h-3 w-3 rounded-full ${formData.role === role.value ? 'bg-sky-500' : 'bg-slate-300'}`} />
                   </div>
-                  <p className="mt-1 text-xs font-black uppercase tracking-wide text-slate-400">{role.subtitle}</p>
-                  <p className="mt-2 text-sm leading-6 text-slate-300">{role.note}</p>
+                  <p className="mt-1 text-xs font-black uppercase tracking-wide text-sky-700">{role.subtitle}</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">{role.note}</p>
                 </button>
               ))}
             </div>
 
-            <div className="mt-7 rounded-lg border border-slate-800 bg-slate-900 p-4">
+            <div className="mt-7 rounded-lg border border-sky-100 bg-white/80 p-4 text-slate-800 shadow-sm">
               <div className="text-sm font-black">Dữ liệu sau khi tạo</div>
-              <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-300">
+              <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-600">
                 {expectations.map((item) => (
                   <li key={item}>- {item}</li>
                 ))}

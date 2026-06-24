@@ -188,6 +188,18 @@ export default function PersonalProgress() {
 
     return { quizAttempts, simulationViews, assistantQuestions, activeCount, completionRate }
   }, [dashboard])
+  const smartAnalytics = useMemo(() => {
+    const localDashboard = user?.id ? buildLocalLearningDashboard(user.id) : null
+    return {
+      mastery_score: dashboard?.mastery_score ?? localDashboard?.mastery_score ?? 0,
+      engagement_score: dashboard?.engagement_score ?? localDashboard?.engagement_score ?? 0,
+      risk_score: dashboard?.risk_score ?? localDashboard?.risk_score ?? 0,
+      risk_level: dashboard?.risk_level ?? localDashboard?.risk_level ?? 'low',
+      learning_path: dashboard?.learning_path ?? localDashboard?.learning_path ?? [],
+      weak_alerts: dashboard?.weak_alerts ?? localDashboard?.weak_alerts ?? [],
+      intervention_plan: dashboard?.intervention_plan ?? localDashboard?.intervention_plan ?? [],
+    }
+  }, [dashboard, user?.id])
 
   if (isLoading) {
     return <div className="page-container text-center text-slate-600">Đang tải tiến độ cá nhân...</div>
@@ -272,6 +284,86 @@ export default function PersonalProgress() {
           <div className="rounded-lg bg-white p-4 shadow-sm">
             <p className="text-sm font-semibold text-slate-500">Bài có hoạt động</p>
             <p className="mt-2 text-3xl font-bold text-rose-700">{evidenceStats.activeCount}</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="mb-6 rounded-lg border border-sky-200 bg-gradient-to-r from-white via-sky-50 to-emerald-50 p-5 shadow-sm">
+        <div className="mb-4 flex flex-col justify-between gap-2 md:flex-row md:items-end">
+          <div>
+            <p className="text-sm font-black uppercase text-sky-700">Smart Learning Profile</p>
+            <h2 className="text-2xl font-bold text-slate-950">Phan tich ca nhan hoa va canh bao som</h2>
+          </div>
+          <div
+            className={`rounded-lg border px-4 py-3 text-sm font-black ${
+              smartAnalytics.risk_level === 'high'
+                ? 'border-rose-200 bg-rose-50 text-rose-900'
+                : smartAnalytics.risk_level === 'medium'
+                  ? 'border-amber-200 bg-amber-50 text-amber-900'
+                  : 'border-emerald-200 bg-emerald-50 text-emerald-900'
+            }`}
+          >
+            Risk: {smartAnalytics.risk_level === 'high' ? 'Cao' : smartAnalytics.risk_level === 'medium' ? 'Vua' : 'On dinh'}
+          </div>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-3">
+          <div className="rounded-lg bg-white p-4 shadow-sm">
+            <p className="text-sm font-semibold text-slate-500">Mastery score</p>
+            <p className="mt-2 text-3xl font-bold text-sky-700">{smartAnalytics.mastery_score}%</p>
+          </div>
+          <div className="rounded-lg bg-white p-4 shadow-sm">
+            <p className="text-sm font-semibold text-slate-500">Engagement score</p>
+            <p className="mt-2 text-3xl font-bold text-emerald-700">{smartAnalytics.engagement_score}%</p>
+          </div>
+          <div className="rounded-lg bg-white p-4 shadow-sm">
+            <p className="text-sm font-semibold text-slate-500">Risk score</p>
+            <p className="mt-2 text-3xl font-bold text-rose-700">{smartAnalytics.risk_score}%</p>
+          </div>
+        </div>
+
+        <div className="mt-4 grid gap-4 lg:grid-cols-3">
+          <div className="rounded-lg border border-slate-100 bg-white p-4">
+            <h3 className="font-bold text-slate-950">Lo trinh AI tiep theo</h3>
+            <div className="mt-3 space-y-2">
+              {smartAnalytics.learning_path.length ? (
+                smartAnalytics.learning_path.map((item) => (
+                  <Link key={`${item.type}-${item.lesson_id}`} to={item.to} className="block rounded-lg bg-sky-50 p-3 text-sm text-sky-950">
+                    <span className="font-bold">{item.label}: {item.title}</span>
+                    <span className="mt-1 block">{item.reason}</span>
+                  </Link>
+                ))
+              ) : (
+                <p className="rounded-lg bg-slate-50 p-3 text-sm text-slate-600">Chua co du lieu de tao lo trinh rieng.</p>
+              )}
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-slate-100 bg-white p-4">
+            <h3 className="font-bold text-slate-950">Bai can ho tro them</h3>
+            <div className="mt-3 space-y-2">
+              {smartAnalytics.weak_alerts.length ? (
+                smartAnalytics.weak_alerts.map((item) => (
+                  <Link key={item.lesson_id} to={`/lessons/${item.lesson_id}/chat`} className="block rounded-lg bg-rose-50 p-3 text-sm text-rose-950">
+                    <span className="font-bold">{item.lesson?.title || `Bai ${item.lesson_id}`}</span>
+                    <span className="mt-1 block">{item.analytics?.risk_reasons?.[0]}</span>
+                  </Link>
+                ))
+              ) : (
+                <p className="rounded-lg bg-emerald-50 p-3 text-sm font-semibold text-emerald-900">Chua phat hien bai nguy co cao.</p>
+              )}
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-slate-100 bg-white p-4">
+            <h3 className="font-bold text-slate-950">Ke hoach can thiep</h3>
+            <div className="mt-3 space-y-2">
+              {smartAnalytics.intervention_plan.map((item, index) => (
+                <div key={item} className="rounded-lg bg-amber-50 p-3 text-sm font-semibold text-amber-950">
+                  {index + 1}. {item}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>

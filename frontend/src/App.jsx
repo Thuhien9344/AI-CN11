@@ -1,38 +1,52 @@
+import { Suspense, lazy } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import { useAuthStore } from './store'
 
 // Pages
-import Login from './pages/Login'
-import Register from './pages/Register'
-import Dashboard from './pages/Dashboard'
-import CourseDetail from './pages/CourseDetail'
-import LessonDetail from './pages/LessonDetail'
-import ChatBot from './pages/ChatBot'
-import Quiz from './pages/Quiz'
-import ThreeDSimulation from './pages/ThreeDSimulation'
-import EngineGame from './pages/EngineGame'
-import PersonalProgress from './pages/PersonalProgress'
-import ChapterTests from './pages/ChapterTests'
-import Classroom from './pages/Classroom'
-import WarmupGameArena from './pages/WarmupGameArena'
-import SystemDesignLab from './pages/SystemDesignLab'
-import FunContests from './pages/FunContests'
-import PracticeBank from './pages/PracticeBank'
-import NotFound from './pages/NotFound'
+const Login = lazy(() => import('./pages/Login'))
+const Register = lazy(() => import('./pages/Register'))
+const Dashboard = lazy(() => import('./pages/Dashboard'))
+const CourseDetail = lazy(() => import('./pages/CourseDetail'))
+const LessonDetail = lazy(() => import('./pages/LessonDetail'))
+const ChatBot = lazy(() => import('./pages/ChatBot'))
+const Quiz = lazy(() => import('./pages/Quiz'))
+const ThreeDSimulation = lazy(() => import('./pages/ThreeDSimulation'))
+const PersonalProgress = lazy(() => import('./pages/PersonalProgress'))
+const ChapterTests = lazy(() => import('./pages/ChapterTests'))
+const Classroom = lazy(() => import('./pages/Classroom'))
+const SystemDesignLab = lazy(() => import('./pages/SystemDesignLab'))
+const PracticeBank = lazy(() => import('./pages/PracticeBank'))
+const ProjectionPractice = lazy(() => import('./pages/ProjectionPractice'))
+const CircuitExperimentLab = lazy(() => import('./pages/CircuitExperimentLab'))
+const NotFound = lazy(() => import('./pages/NotFound'))
 
 // Components
 import Navigation from './components/Navigation'
+import SEO from './components/SEO'
 
 // Protected Route Component
+const getDefaultRoute = (user) => (user?.role === 'teacher' ? '/classroom' : '/')
+
 const ProtectedRoute = ({ children }) => {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
   return isAuthenticated ? children : <Navigate to="/login" replace />
 }
 
+const PublicOnlyRoute = ({ children }) => {
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
+  const user = useAuthStore((state) => state.user)
+  return isAuthenticated ? <Navigate to={getDefaultRoute(user)} replace /> : children
+}
+
+const PageFallback = () => (
+  <div className="page-container text-center text-slate-600">Đang tải không gian học tập...</div>
+)
+
 function App() {
   return (
     <BrowserRouter>
+      <SEO />
       <Toaster
         position="top-right"
         toastOptions={{
@@ -48,10 +62,11 @@ function App() {
       />
       <div className="min-h-screen bg-transparent">
         <Navigation />
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+        <Suspense fallback={<PageFallback />}>
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/login" element={<PublicOnlyRoute><Login /></PublicOnlyRoute>} />
+            <Route path="/register" element={<PublicOnlyRoute><Register /></PublicOnlyRoute>} />
 
           {/* Protected Routes */}
           <Route
@@ -98,7 +113,7 @@ function App() {
             path="/games"
             element={
               <ProtectedRoute>
-                <WarmupGameArena />
+                <Navigate to="/practice-bank" replace />
               </ProtectedRoute>
             }
           />
@@ -106,7 +121,7 @@ function App() {
             path="/contests"
             element={
               <ProtectedRoute>
-                <FunContests />
+                <Navigate to="/practice-bank" replace />
               </ProtectedRoute>
             }
           />
@@ -115,6 +130,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <PracticeBank />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/projection-practice"
+            element={
+              <ProtectedRoute>
+                <ProjectionPractice />
               </ProtectedRoute>
             }
           />
@@ -170,7 +193,7 @@ function App() {
             path="/lessons/:lessonId/game"
             element={
               <ProtectedRoute>
-                <EngineGame />
+                <Navigate to="/practice-bank" replace />
               </ProtectedRoute>
             }
           />
@@ -182,10 +205,19 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/lessons/:lessonId/circuit-lab"
+            element={
+              <ProtectedRoute>
+                <CircuitExperimentLab />
+              </ProtectedRoute>
+            }
+          />
 
           {/* 404 */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
       </div>
     </BrowserRouter>
   )

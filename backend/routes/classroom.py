@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, s
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
-from auth import require_teacher_user
+from auth import get_authenticated_user, require_teacher_user
 from database import get_db
 from models import Assignment, AssignmentSubmission, ClassroomPost, User
 from schemas import (
@@ -102,7 +102,11 @@ def create_assignment(
 
 
 @router.get("/assignments/{assignment_id}/submissions", response_model=list[AssignmentSubmissionResponse])
-def list_submissions(assignment_id: int, db: Session = Depends(get_db)):
+def list_submissions(
+    assignment_id: int,
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(require_teacher_user),
+):
     assignment = db.query(Assignment).filter(Assignment.id == assignment_id).first()
     if not assignment:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy nhiệm vụ.")
@@ -126,6 +130,7 @@ async def submit_assignment(
     content: str = Form(""),
     file: UploadFile | None = File(None),
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_authenticated_user),
 ):
     assignment = db.query(Assignment).filter(Assignment.id == assignment_id).first()
     if not assignment:
@@ -169,7 +174,7 @@ async def submit_assignment(
 
     submission = AssignmentSubmission(
         assignment_id=assignment_id,
-        student_user_id=student_user_id,
+        student_user_id=student_user_id or current_user.id,
         student_name=student_name.strip() or "Học sinh",
         content=content.strip(),
         file_name=file_name,
@@ -190,6 +195,7 @@ def grade_submission(
     submission_id: int,
     payload: AssignmentGradeUpdate,
     db: Session = Depends(get_db),
+    current_user: User = Depends(require_teacher_user),
 ):
     submission = db.query(AssignmentSubmission).filter(AssignmentSubmission.id == submission_id).first()
     if not submission:
@@ -197,7 +203,7 @@ def grade_submission(
 
     submission.score = payload.score
     submission.feedback = payload.feedback.strip()
-    submission.graded_by = payload.graded_by
+    submission.graded_by = payload.graded_by or current_user.id
     submission.graded_at = datetime.utcnow()
     db.commit()
     db.refresh(submission)
@@ -205,7 +211,11 @@ def grade_submission(
 
 
 @router.get("/submissions/{submission_id}/download")
-def download_submission(submission_id: int, db: Session = Depends(get_db)):
+def download_submission(
+    submission_id: int,
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(require_teacher_user),
+):
     submission = db.query(AssignmentSubmission).filter(AssignmentSubmission.id == submission_id).first()
     if not submission:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy bài nộp.")

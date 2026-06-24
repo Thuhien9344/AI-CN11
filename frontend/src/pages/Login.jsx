@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { useAuthStore } from '../store'
 
@@ -8,7 +8,7 @@ const accountTypes = [
     value: 'student',
     title: 'Học sinh THPT',
     badge: 'Học bài - luyện tập - nộp nhiệm vụ',
-    description: 'Theo dõi lộ trình Công nghệ, làm quiz, game luyện tập, vẽ sơ đồ và xem hồ sơ năng lực.',
+    description: 'Theo dõi lộ trình Công nghệ, làm quiz, xem học liệu, nộp nhiệm vụ và xem hồ sơ năng lực.',
   },
   {
     value: 'teacher',
@@ -21,16 +21,17 @@ const accountTypes = [
 const highlights = [
   'Thiết kế riêng cho môn Công nghệ THPT',
   'Trọng tâm cơ khí, động cơ đốt trong và ô tô',
-  'Kết hợp mô phỏng, sơ đồ, game và đánh giá',
+  'Kết hợp mô phỏng, sơ đồ, quiz và đánh giá',
 ]
 
 export default function Login() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { login, isLoading, error } = useAuthStore()
   const [formData, setFormData] = useState({
-    username: '',
+    username: location.state?.username || '',
     password: '',
-    role: 'student',
+    role: location.state?.role || 'student',
   })
 
   const handleChange = (event) => {
@@ -48,7 +49,7 @@ export default function Login() {
 
     if (result.success) {
       toast.success('Đăng nhập thành công')
-      navigate('/')
+      navigate(formData.role === 'teacher' ? '/classroom' : '/')
     } else {
       toast.error(result.error || error || 'Đăng nhập thất bại')
     }
@@ -59,21 +60,19 @@ export default function Login() {
   return (
     <main className="flex min-h-[calc(100vh-72px)] items-center justify-center px-4 py-8 sm:px-6 lg:px-8">
       <section className="grid w-full max-w-6xl overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm lg:grid-cols-[0.95fr_1.05fr]">
-        <aside className="relative overflow-hidden bg-slate-950 p-7 text-white sm:p-9">
-          <div className="absolute right-8 top-8 h-28 w-28 rounded-full border border-white/10" />
-          <div className="absolute bottom-8 right-24 h-20 w-20 rounded-lg border border-blue-300/20" />
+        <aside className="auth-light-panel bg-gradient-to-br from-sky-50 via-cyan-50 to-emerald-50 p-7 text-slate-950 sm:p-9">
           <p className="text-xs font-black uppercase tracking-[0.22em] text-blue-300">EngineLab Công nghệ</p>
-          <h1 className="mt-4 max-w-xl text-3xl font-black leading-tight sm:text-4xl">
+          <h1 className="mt-4 max-w-xl text-3xl font-black leading-tight text-slate-950 sm:text-4xl">
             Phòng học Công nghệ THPT
           </h1>
-          <p className="mt-4 max-w-xl text-sm leading-7 text-slate-300">
+          <p className="mt-4 max-w-xl text-sm leading-7 text-slate-700">
             Không gian học tập chuyên biệt cho môn Công nghệ: học lí thuyết, quan sát mô phỏng, thiết kế sơ đồ hệ
             thống, luyện tập và nhận phản hồi theo từng chương.
           </p>
 
           <div className="mt-8 grid gap-3">
             {highlights.map((item) => (
-              <div key={item} className="rounded-lg border border-slate-800 bg-slate-900/80 px-4 py-3 text-sm font-bold">
+              <div key={item} className="rounded-lg border border-sky-100 bg-white/80 px-4 py-3 text-sm font-bold text-slate-800 shadow-sm">
                 {item}
               </div>
             ))}
@@ -93,15 +92,15 @@ export default function Login() {
                 onClick={() => chooseRole(type.value)}
                 className={`rounded-lg border p-4 text-left transition ${
                   formData.role === type.value
-                    ? 'border-slate-950 bg-slate-950 text-white shadow-sm'
-                    : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
+                    ? 'border-sky-300 bg-gradient-to-br from-sky-50 to-cyan-50 text-slate-950 shadow-md ring-2 ring-sky-100'
+                    : 'border-slate-200 bg-white text-slate-700 hover:border-sky-200 hover:bg-sky-50'
                 }`}
               >
                 <div className="flex items-center justify-between gap-3">
                   <span className="font-black">{type.title}</span>
-                  <span className={`h-3 w-3 rounded-full ${formData.role === type.value ? 'bg-blue-400' : 'bg-slate-300'}`} />
+                  <span className={`h-3 w-3 rounded-full ${formData.role === type.value ? 'bg-sky-500' : 'bg-slate-300'}`} />
                 </div>
-                <p className={`mt-2 text-sm leading-6 ${formData.role === type.value ? 'text-slate-300' : 'text-slate-600'}`}>
+                <p className={`mt-2 text-sm leading-6 ${formData.role === type.value ? 'text-slate-700' : 'text-slate-600'}`}>
                   {type.description}
                 </p>
               </button>

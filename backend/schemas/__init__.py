@@ -17,6 +17,7 @@ class UserBase(BaseModel):
     email: EmailStr
     full_name: Optional[str] = None
     role: UserRole = UserRole.STUDENT
+    student_class: str = Field(default="", max_length=50)
 
 
 class UserCreate(UserBase):
@@ -112,13 +113,13 @@ class QuestionBase(BaseModel):
 
 class QuestionCreate(QuestionBase):
     lesson_id: int
-    options: Optional[List[QuestionOptionBase]] = []
+    options: Optional[List[QuestionOptionBase]] = Field(default_factory=list)
 
 
 class QuestionResponse(QuestionBase):
     id: int
     lesson_id: int
-    options: List[QuestionOptionResponse] = []
+    options: List[QuestionOptionResponse] = Field(default_factory=list)
     created_at: datetime
 
     class Config:
@@ -161,7 +162,7 @@ class QuizAttemptResponse(BaseModel):
     status: str
     started_at: datetime
     submitted_at: datetime
-    results: List[QuizResultResponse] = []
+    results: List[QuizResultResponse] = Field(default_factory=list)
 
     class Config:
         from_attributes = True
@@ -243,6 +244,9 @@ class LearningRecommendation(BaseModel):
     reason: str
     priority: str
     suggested_action: str
+    mastery_score: Optional[float] = 0
+    risk_score: Optional[float] = 0
+    knowledge_unit: Optional[str] = None
 
 
 class LearningDashboardResponse(BaseModel):
@@ -254,9 +258,16 @@ class LearningDashboardResponse(BaseModel):
     average_quiz_score: float
     total_time_spent_seconds: int
     assistant_questions: int
-    recent_events: List[LearningEventResponse] = []
-    lesson_progress: List[LessonProgressResponse] = []
-    recommendations: List[LearningRecommendation] = []
+    recent_events: List[LearningEventResponse] = Field(default_factory=list)
+    lesson_progress: List[LessonProgressResponse] = Field(default_factory=list)
+    recommendations: List[LearningRecommendation] = Field(default_factory=list)
+    mastery_score: float = 0
+    engagement_score: float = 0
+    risk_score: float = 0
+    risk_level: str = "low"
+    weak_alerts: List[LearningRecommendation] = Field(default_factory=list)
+    learning_path: List[LearningRecommendation] = Field(default_factory=list)
+    intervention_plan: List[str] = Field(default_factory=list)
 
 
 # ============= Reference Material Schemas =============

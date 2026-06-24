@@ -1,12 +1,223 @@
 import {
-  canhDieuActivities,
-  canhDieuCourses,
-  canhDieuLessons,
-  canhDieuQuestions,
-  chapterAssessments,
-} from './canhDieuData'
+  canhDieuActivities as grade11Activities,
+  canhDieuCourses as grade11Courses,
+  canhDieuLessons as grade11Lessons,
+  canhDieuQuestions as grade11Questions,
+  chapterAssessments as grade11Assessments,
+} from './knttMechanical11SpecializedData'
+import {
+  canhDieuActivities as grade10Activities,
+  canhDieuCourses as grade10Courses,
+  canhDieuLessons as grade10Lessons,
+  canhDieuQuestions as grade10Questions,
+  chapterAssessments as grade10Assessments,
+} from './knttTechnology10Data'
+import {
+  canhDieuActivities as grade12Activities,
+  canhDieuCourses as grade12Courses,
+  canhDieuLessons as grade12Lessons,
+  canhDieuQuestions as grade12Questions,
+  chapterAssessments as grade12Assessments,
+} from './knttIndustrial12Data'
 
-export { chapterAssessments }
+const gradeConfigs = {
+  10: {
+    gradeLevel: 10,
+    gradeLabel: 'Khối 10',
+    sourceName: 'Thiết kế và công nghệ - Kết nối tri thức',
+    courseOffset: 1000,
+    lessonOffset: 100000,
+    questionOffset: 1000000,
+    optionOffset: 10000000,
+  },
+  11: {
+    gradeLevel: 11,
+    gradeLabel: 'Khối 11',
+    sourceName: 'Công nghệ cơ khí',
+    courseOffset: 1100,
+    lessonOffset: 110000,
+    questionOffset: 1100000,
+    optionOffset: 11000000,
+  },
+  12: {
+    gradeLevel: 12,
+    gradeLabel: 'Khối 12',
+    sourceName: 'Công nghệ điện - điện tử - Kết nối tri thức',
+    courseOffset: 1200,
+    lessonOffset: 120000,
+    questionOffset: 1200000,
+    optionOffset: 12000000,
+  },
+}
+
+const mapCourse = (course, config) => ({
+  ...course,
+  id: config.courseOffset + course.id,
+  source_course_id: course.id,
+  grade_level: config.gradeLevel,
+  grade_label: config.gradeLabel,
+  source_name: config.sourceName,
+})
+
+const mapLesson = (lesson, config) => ({
+  ...lesson,
+  id: config.lessonOffset + lesson.id,
+  course_id: config.courseOffset + lesson.course_id,
+  source_id: lesson.id,
+  source_course_id: lesson.course_id,
+  grade_level: config.gradeLevel,
+  grade_label: config.gradeLabel,
+  source_name: config.sourceName,
+})
+
+const mapQuestion = (question, config) => ({
+  ...question,
+  id: config.questionOffset + question.id,
+  lesson_id: config.lessonOffset + question.lesson_id,
+  source_id: question.id,
+  grade_level: config.gradeLevel,
+  options: question.options.map((option) => ({
+    ...option,
+    id: config.optionOffset + option.id,
+  })),
+})
+
+const getCorrectOptionText = (question) =>
+  question.options?.[question.correctIndex] || question.options?.[0] || 'nội dung trọng tâm của bài'
+
+const diversifyAssessmentQuestions = (questions) => {
+  const normalizedQuestions = questions.map((question) => ({
+    ...question,
+    question_type: question.question_type || 'multiple_choice',
+    points: question.points || 1,
+  }))
+
+  if (!normalizedQuestions.length) return normalizedQuestions
+
+  const anchor = normalizedQuestions[0]
+  const second = normalizedQuestions[1] || normalizedQuestions[0]
+  const third = normalizedQuestions[2] || normalizedQuestions[0]
+  const correctAnchor = getCorrectOptionText(anchor)
+  const correctSecond = getCorrectOptionText(second)
+  const correctThird = getCorrectOptionText(third)
+
+  return [
+    ...normalizedQuestions,
+    {
+      id: `${anchor.id}-tf`,
+      question_type: 'true_false',
+      points: 1,
+      text: `Đúng hay sai: ${correctAnchor}`,
+      correctBoolean: true,
+      explanation: 'Nhận định này đúng vì bám vào kiến thức trọng tâm của chương.',
+    },
+    {
+      id: `${second.id}-multi`,
+      question_type: 'multi_select',
+      points: 2,
+      text: 'Chọn tất cả nhận định phù hợp khi ôn tập nội dung của chương.',
+      options: [
+        correctSecond,
+        'Bỏ qua tiêu chí an toàn nếu câu trả lời vẫn có vẻ hợp lí.',
+        'Liên hệ kiến thức với sơ đồ, quy trình hoặc tình huống thực tế.',
+        'Chỉ học thuộc tên bài, không cần giải thích bằng lời của mình.',
+      ],
+      correctIndexes: [0, 2],
+      explanation: 'Cần chọn cả ý kiến thức đúng và cách học vận dụng; các lựa chọn học vẹt hoặc bỏ qua an toàn đều không phù hợp.',
+    },
+    {
+      id: `${third.id}-fill`,
+      question_type: 'fill_blank',
+      points: 1,
+      text: 'Điền từ còn thiếu: Khi vận dụng kiến thức Công nghệ, học sinh luôn cần chú ý yếu tố ______ trong sử dụng, thiết kế hoặc vận hành.',
+      acceptedAnswers: ['an toàn', 'antoan'],
+      explanation: 'An toàn là tiêu chí bắt buộc trong các nội dung công nghệ, kĩ thuật và hệ thống.',
+    },
+    {
+      id: `${anchor.id}-match`,
+      question_type: 'matching',
+      points: 2,
+      text: 'Ghép khái niệm với ý nghĩa phù hợp.',
+      pairs: [
+        { term: 'Kiến thức trọng tâm', answer: correctThird },
+        { term: 'Vận dụng', answer: 'Liên hệ với sơ đồ, quy trình hoặc tình huống thực tế' },
+        { term: 'Tự đánh giá', answer: 'Đọc giải thích sau khi nộp để biết phần cần ôn lại' },
+      ],
+      explanation: 'Ghép cặp giúp kiểm tra khả năng hiểu thuật ngữ, không chỉ chọn một đáp án có sẵn.',
+    },
+  ]
+}
+
+const mapActivities = (activities, lessons, config) =>
+  lessons.reduce((rows, lesson) => {
+    const mappedId = config.lessonOffset + lesson.id
+    rows[mappedId] = activities[lesson.id]
+    return rows
+  }, {})
+
+const mapAssessment = (assessment, config) => ({
+  ...assessment,
+  id: `g${config.gradeLevel}-${assessment.id}`,
+  course_id: config.courseOffset + assessment.course_id,
+  source_course_id: assessment.course_id,
+  grade_level: config.gradeLevel,
+  grade_label: config.gradeLabel,
+  chapter: `${config.gradeLabel} - ${assessment.chapter}`,
+  description: `${config.gradeLabel}: ${assessment.description}`,
+  questions: diversifyAssessmentQuestions(
+    assessment.questions.map((question) => ({
+      ...question,
+      id: `g${config.gradeLevel}-${question.id}`,
+    }))
+  ),
+})
+
+const grade10Config = gradeConfigs[10]
+const grade11Config = gradeConfigs[11]
+const grade12Config = gradeConfigs[12]
+
+const grade10MappedCourses = grade10Courses.map((course) => mapCourse(course, grade10Config))
+const grade11MappedCourses = grade11Courses.map((course) => mapCourse(course, grade11Config))
+const grade12MappedCourses = grade12Courses.map((course) => mapCourse(course, grade12Config))
+const grade10MappedLessons = grade10Lessons.map((lesson) => mapLesson(lesson, grade10Config))
+const grade11MappedLessons = grade11Lessons.map((lesson) => mapLesson(lesson, grade11Config))
+const grade12MappedLessons = grade12Lessons.map((lesson) => mapLesson(lesson, grade12Config))
+
+export const learningPaths = [
+  {
+    grade_level: 10,
+    grade_label: 'Khối 10',
+    title: 'Công nghệ 10 - Thiết kế và công nghệ',
+    description:
+      'Mạch học gồm đại cương về công nghệ, vẽ kĩ thuật và thiết kế kĩ thuật. Trọng tâm là tư duy hệ thống, đọc bản vẽ và giải quyết vấn đề bằng quy trình thiết kế.',
+    first_course_id: grade10MappedCourses[0]?.id,
+    courses: grade10MappedCourses,
+  },
+  {
+    grade_level: 11,
+    grade_label: 'Khối 11',
+    title: 'Công nghệ 11 - Chuyên đề cơ khí',
+    description:
+      'Mạch học theo Chuyên đề học tập Công nghệ cơ khí 11 - Kết nối tri thức: dự án nghiên cứu cơ khí, CAD/CAM-CNC và công nghệ in 3D. Trọng tâm là học theo dự án, quy trình số và minh chứng kĩ thuật.',
+    first_course_id: grade11MappedCourses[0]?.id,
+    courses: grade11MappedCourses,
+  },
+  {
+    grade_level: 12,
+    grade_label: 'Khối 12',
+    title: 'Công nghệ 12 - Công nghệ điện - điện tử',
+    description:
+      'Mạch học theo Công nghệ điện - điện tử 12 - Kết nối tri thức: kĩ thuật điện, hệ thống điện quốc gia, mạng điện trong nhà, an toàn điện, điện tử tương tự, điện tử số và vi điều khiển.',
+    first_course_id: grade12MappedCourses[0]?.id,
+    courses: grade12MappedCourses,
+  },
+]
+
+export const chapterAssessments = [
+  ...grade10Assessments.map((assessment) => mapAssessment(assessment, grade10Config)),
+  ...grade11Assessments.map((assessment) => mapAssessment(assessment, grade11Config)),
+  ...grade12Assessments.map((assessment) => mapAssessment(assessment, grade12Config)),
+]
 
 export const engineCycleSteps = [
   {
@@ -39,9 +250,45 @@ export const engineCycleSteps = [
   },
 ]
 
-export const sampleCourses = canhDieuCourses
-export const sampleLessons = canhDieuLessons
-export const sampleQuestions = canhDieuQuestions
+export const sampleCourses = [...grade10MappedCourses, ...grade11MappedCourses, ...grade12MappedCourses]
+export const sampleLessons = [...grade10MappedLessons, ...grade11MappedLessons, ...grade12MappedLessons]
+export const sampleQuestions = [
+  ...grade10Questions.map((question) => mapQuestion(question, grade10Config)),
+  ...grade11Questions.map((question) => mapQuestion(question, grade11Config)),
+  ...grade12Questions.map((question) => mapQuestion(question, grade12Config)),
+]
+
+const interactiveActivities = {
+  ...mapActivities(grade10Activities, grade10Lessons, grade10Config),
+  ...mapActivities(grade11Activities, grade11Lessons, grade11Config),
+  ...mapActivities(grade12Activities, grade12Lessons, grade12Config),
+}
+
+const defaultActivity = grade10Activities.default || grade11Activities.default || {
+  flashcards: [
+    {
+      front: 'Cách học một bài Công nghệ hiệu quả?',
+      back: 'Xác định khái niệm chính, nhiệm vụ của đối tượng kĩ thuật, quy trình hoặc hệ thống, sau đó liên hệ với ví dụ thực tế.',
+    },
+  ],
+  matching: [
+    { term: 'Khái niệm', answer: 'Nêu bản chất của nội dung đang học' },
+    { term: 'Vận dụng', answer: 'Liên hệ kiến thức với tình huống thực tế' },
+  ],
+  scenario: {
+    title: 'Phân tích kiến thức',
+    prompt: 'Khi học một nội dung mới trong Công nghệ, bước nào nên làm trước?',
+    options: [
+      { text: 'Đọc khái niệm và xác định nhiệm vụ của đối tượng kĩ thuật', correct: true, feedback: 'Đúng. Nắm nhiệm vụ trước sẽ giúp hiểu cấu tạo, quy trình hoặc nguyên lí dễ hơn.' },
+      { text: 'Học thuộc từng câu mà không cần hiểu ví dụ', correct: false, feedback: 'Chưa đúng. Môn Công nghệ cần hiểu và vận dụng.' },
+    ],
+  },
+  explainChecklist: [
+    'Nêu được khái niệm chính.',
+    'Nêu được nhiệm vụ hoặc vai trò.',
+    'Giải thích được quy trình, hệ thống hoặc nguyên lí bằng lời của mình.',
+  ],
+}
 
 export const getSampleCourse = (courseId) =>
   sampleCourses.find((course) => course.id === Number(courseId))
@@ -57,47 +304,8 @@ export const getSampleLesson = (lessonId) =>
 export const getSampleQuestionsByLesson = (lessonId) =>
   sampleQuestions.filter((question) => question.lesson_id === Number(lessonId))
 
-const defaultActivity = {
-  flashcards: [
-    {
-      front: 'Cách học một bài Công nghệ cơ khí hiệu quả?',
-      back: 'Xác định khái niệm chính, nhiệm vụ của đối tượng kĩ thuật, cấu tạo hoặc quy trình, sau đó liên hệ với ví dụ thực tế.',
-    },
-    {
-      front: 'Khi gặp một hệ thống cơ khí cần phân tích theo những ý nào?',
-      back: 'Nhiệm vụ, cấu tạo chính, nguyên lí làm việc, yêu cầu an toàn và cách bảo dưỡng hoặc sử dụng đúng.',
-    },
-  ],
-  matching: [
-    { term: 'Nhiệm vụ', answer: 'Cho biết bộ phận hoặc hệ thống dùng để làm gì' },
-    { term: 'Cấu tạo', answer: 'Cho biết gồm những bộ phận chính nào' },
-    { term: 'Nguyên lí', answer: 'Cho biết hoạt động theo trình tự nào' },
-  ],
-  scenario: {
-    title: 'Phân tích kiến thức SGK',
-    prompt: 'Khi học một nội dung mới trong Công nghệ cơ khí, bước nào nên làm trước?',
-    options: [
-      {
-        text: 'Đọc khái niệm và xác định nhiệm vụ của đối tượng kĩ thuật',
-        correct: true,
-        feedback: 'Đúng. Nắm nhiệm vụ trước sẽ giúp hiểu cấu tạo và nguyên lí dễ hơn.',
-      },
-      {
-        text: 'Học thuộc từng câu mà không cần hiểu nhiệm vụ',
-        correct: false,
-        feedback: 'Chưa đúng. Công nghệ cơ khí cần hiểu nhiệm vụ, cấu tạo và nguyên lí.',
-      },
-    ],
-  },
-  explainChecklist: [
-    'Nêu được khái niệm chính.',
-    'Nêu được nhiệm vụ hoặc vai trò.',
-    'Giải thích được cấu tạo, quy trình hoặc nguyên lí bằng lời của mình.',
-  ],
-}
-
 export const getInteractiveActivity = (lessonId) =>
-  canhDieuActivities[Number(lessonId)] || defaultActivity
+  interactiveActivities[Number(lessonId)] || defaultActivity
 
 export const getChapterAssessmentsByCourse = (courseId) =>
   chapterAssessments.filter((assessment) => assessment.course_id === Number(courseId))

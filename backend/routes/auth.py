@@ -3,7 +3,7 @@ from datetime import timedelta
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from auth import create_access_token, decode_token, hash_password, verify_password
+from auth import create_access_token, get_authenticated_user, hash_password, verify_password
 from database import get_db
 from models import User
 from schemas import Token, UserCreate, UserLogin, UserResponse
@@ -24,12 +24,19 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
             detail="Username or email already registered",
         )
 
+    if user_data.role.value in {"admin", "moderator"}:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin and moderator accounts must be created by an administrator.",
+        )
+
     new_user = User(
         username=user_data.username,
         email=user_data.email,
         full_name=user_data.full_name,
         password_hash=hash_password(user_data.password),
-        role=user_data.role,
+        role=user_data.role.value,
+        student_class=user_data.student_class.strip(),
     )
 
     db.add(new_user)
@@ -70,26 +77,6 @@ async def login(credentials: UserLogin, db: Session = Depends(get_db)):
 
 
 @router.get("/me", response_model=UserResponse)
-async def get_current_user(token: str = None, db: Session = Depends(get_db)):
-    """Get current authenticated user."""
-    if not token:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not authenticated",
-        )
-
-    token_data = decode_token(token)
-    if token_data is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token",
-        )
-
-    user = db.query(User).filter(User.username == token_data.username).first()
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found",
-        )
-
-    return user
+async def get_current_user(current_user: User = Depends(get_authenticated_user)):
+    """Get the authenticated user from the Bearer token."""
+    return current_user

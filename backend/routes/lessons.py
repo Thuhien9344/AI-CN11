@@ -5,13 +5,18 @@ from typing import List
 from database import get_db
 from models import Course, Lesson
 from schemas import CourseResponse, CourseCreate, LessonResponse, LessonCreate
+from auth import require_teacher_user
 
 router = APIRouter(prefix="/api", tags=["Lessons & Courses"])
 
 
 # ============= Course Endpoints =============
 @router.post("/courses", response_model=CourseResponse, status_code=status.HTTP_201_CREATED)
-async def create_course(course_data: CourseCreate, db: Session = Depends(get_db)):
+async def create_course(
+    course_data: CourseCreate,
+    db: Session = Depends(get_db),
+    _current_user=Depends(require_teacher_user),
+):
     """Create a new course."""
     new_course = Course(
         title=course_data.title,
@@ -48,7 +53,8 @@ async def get_course(course_id: int, db: Session = Depends(get_db)):
 async def update_course(
     course_id: int,
     course_data: CourseCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _current_user=Depends(require_teacher_user),
 ):
     """Update a course."""
     course = db.query(Course).filter(Course.id == course_id).first()
@@ -58,7 +64,7 @@ async def update_course(
             detail="Course not found",
         )
 
-    for key, value in course_data.dict(exclude_unset=True).items():
+    for key, value in course_data.model_dump(exclude_unset=True).items():
         setattr(course, key, value)
 
     db.commit()
@@ -67,7 +73,11 @@ async def update_course(
 
 
 @router.delete("/courses/{course_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_course(course_id: int, db: Session = Depends(get_db)):
+async def delete_course(
+    course_id: int,
+    db: Session = Depends(get_db),
+    _current_user=Depends(require_teacher_user),
+):
     """Delete a course."""
     course = db.query(Course).filter(Course.id == course_id).first()
     if not course:
@@ -81,7 +91,11 @@ async def delete_course(course_id: int, db: Session = Depends(get_db)):
 
 # ============= Lesson Endpoints =============
 @router.post("/lessons", response_model=LessonResponse, status_code=status.HTTP_201_CREATED)
-async def create_lesson(lesson_data: LessonCreate, db: Session = Depends(get_db)):
+async def create_lesson(
+    lesson_data: LessonCreate,
+    db: Session = Depends(get_db),
+    _current_user=Depends(require_teacher_user),
+):
     """Create a new lesson."""
     # Verify course exists
     course = db.query(Course).filter(Course.id == lesson_data.course_id).first()
@@ -135,7 +149,8 @@ async def get_lesson(lesson_id: int, db: Session = Depends(get_db)):
 async def update_lesson(
     lesson_id: int,
     lesson_data: LessonCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _current_user=Depends(require_teacher_user),
 ):
     """Update a lesson."""
     lesson = db.query(Lesson).filter(Lesson.id == lesson_id).first()
@@ -145,7 +160,7 @@ async def update_lesson(
             detail="Lesson not found",
         )
 
-    for key, value in lesson_data.dict(exclude_unset=True).items():
+    for key, value in lesson_data.model_dump(exclude_unset=True).items():
         if key != "course_id":  # Don't allow changing course_id
             setattr(lesson, key, value)
 
@@ -155,7 +170,11 @@ async def update_lesson(
 
 
 @router.delete("/lessons/{lesson_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_lesson(lesson_id: int, db: Session = Depends(get_db)):
+async def delete_lesson(
+    lesson_id: int,
+    db: Session = Depends(get_db),
+    _current_user=Depends(require_teacher_user),
+):
     """Delete a lesson."""
     lesson = db.query(Lesson).filter(Lesson.id == lesson_id).first()
     if not lesson:

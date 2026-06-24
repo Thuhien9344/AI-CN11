@@ -5,12 +5,17 @@ from typing import List
 from database import get_db
 from models import Question, Lesson, QuestionOption
 from schemas import QuestionResponse, QuestionCreate
+from auth import require_teacher_user
 
 router = APIRouter(prefix="/api", tags=["Questions"])
 
 
 @router.post("/questions", response_model=QuestionResponse, status_code=status.HTTP_201_CREATED)
-async def create_question(question_data: QuestionCreate, db: Session = Depends(get_db)):
+async def create_question(
+    question_data: QuestionCreate,
+    db: Session = Depends(get_db),
+    _current_user=Depends(require_teacher_user),
+):
     """Create a new question."""
     # Verify lesson exists
     lesson = db.query(Lesson).filter(Lesson.id == question_data.lesson_id).first()
@@ -76,7 +81,8 @@ async def get_question(question_id: int, db: Session = Depends(get_db)):
 async def update_question(
     question_id: int,
     question_data: QuestionCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _current_user=Depends(require_teacher_user),
 ):
     """Update a question."""
     question = db.query(Question).filter(Question.id == question_id).first()
@@ -112,7 +118,11 @@ async def update_question(
 
 
 @router.delete("/questions/{question_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_question(question_id: int, db: Session = Depends(get_db)):
+async def delete_question(
+    question_id: int,
+    db: Session = Depends(get_db),
+    _current_user=Depends(require_teacher_user),
+):
     """Delete a question."""
     question = db.query(Question).filter(Question.id == question_id).first()
     if not question:

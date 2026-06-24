@@ -35,6 +35,7 @@ class User(Base):
     password_hash = Column(String(255), nullable=False)
     full_name = Column(String(100))
     role = Column(String(20), default=UserRole.STUDENT.value)
+    student_class = Column(String(50), default="")
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -81,6 +82,9 @@ class Course(Base):
 class UserCourse(Base):
     """User-Course association (enrollment)."""
     __tablename__ = "user_courses"
+    __table_args__ = (
+        UniqueConstraint("user_id", "course_id", name="uq_user_course_user_course"),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
