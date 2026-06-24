@@ -126,6 +126,41 @@ const loginLocalUser = (usernameOrEmail, password, expectedRole = 'student') => 
   }
 }
 
+const loginOfflineDemoUser = (usernameOrEmail, password, role = 'student') => {
+  const users = getLocalUsers()
+  const username = usernameOrEmail.trim()
+  const existingIndex = users.findIndex(
+    (item) => item.username === username || item.email === username
+  )
+  const user = {
+    id: existingIndex >= 0 ? users[existingIndex].id : Date.now(),
+    username,
+    email: username.includes('@') ? username : `${username}@demo.local`,
+    password,
+    full_name: role === 'teacher' ? 'Giao vien demo' : `Hoc sinh ${username}`,
+    role: normalizeRole(role),
+    student_class: role === 'student' ? 'Lop demo' : '',
+    is_active: true,
+  }
+
+  if (existingIndex >= 0) {
+    users[existingIndex] = {
+      ...users[existingIndex],
+      ...user,
+    }
+  } else {
+    users.push(user)
+  }
+
+  saveLocalUsers(users)
+  saveProfileMeta(user.username, {
+    role: user.role,
+    student_class: user.student_class,
+    full_name: user.full_name,
+  })
+
+  return loginLocalUser(username, password, role)
+}
 // Auth Store
 export const useAuthStore = create((set, get) => ({
   user: getLocalCurrentUser(),
@@ -173,7 +208,7 @@ export const useAuthStore = create((set, get) => ({
         error.response.status === 404 ||
         error.response.status >= 500
 
-      if (backendUnavailable || error.response?.status === 401 || error.response?.status === 422) {
+      if (backendUnavailable) {
         const result = loginLocalUser(username, password, role)
         if (result.success) {
           set({
@@ -185,6 +220,17 @@ export const useAuthStore = create((set, get) => ({
           return { success: true }
         }
 
+        const demoResult = loginOfflineDemoUser(username, password, role)
+        set({
+          user: demoResult.user,
+          token: demoResult.access_token,
+          isAuthenticated: true,
+          isLoading: false,
+        })
+        return { success: true }
+      }
+
+      if (error.response?.status === 401 || error.response?.status === 422) {
         const message =
           'Sai tai khoan/email hoac mat khau. Neu chua co tai khoan tren he thong nay, hay bam Tao tai khoan moi truoc.'
         set({ error: message, isLoading: false })
@@ -334,6 +380,8 @@ export const useChatStore = create((set) => ({
 
   clearError: () => set({ error: null }),
 }))
+
+
 
 
 
