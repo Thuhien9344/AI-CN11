@@ -1,6 +1,8 @@
 import axios from 'axios'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL ?? ''
+const APP_BASE_URL = import.meta.env.BASE_URL ?? '/'
+const appPath = (path) => `${APP_BASE_URL.replace(/\/$/, '')}${path}`
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -28,7 +30,7 @@ api.interceptors.response.use(
 
     if (error.response?.status === 401 && !isLocalSession && !isAuthPage) {
       localStorage.removeItem('token')
-      window.location.href = '/login'
+      window.location.href = appPath('/login')
     }
     return Promise.reject(error)
   }

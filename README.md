@@ -141,6 +141,25 @@ npm.cmd run build
 
 The current repository may not contain many test files yet, so `pytest` or `vitest` can report no collected tests. Use the build and backend import checks as smoke tests during development.
 
+## GitHub Pages Deployment
+
+This repository includes a GitHub Actions workflow at `.github/workflows/pages.yml` that builds the Vite frontend and publishes `frontend/dist` to GitHub Pages after every push to `main`.
+
+To enable the site on GitHub:
+
+1. Open the repository Settings.
+2. Go to Pages.
+3. Set Source to `GitHub Actions`.
+4. Push to `main` and wait for the `Deploy Frontend to GitHub Pages` action to finish.
+
+The frontend build is configured for the repository path `/AI-CN11/`. The deployed URL will usually be:
+
+```text
+https://thuhien9344.github.io/AI-CN11/
+```
+
+The static GitHub Pages version uses the bundled demo curriculum data in `frontend/src/data`. Backend-only features still need the FastAPI server to be deployed separately and connected with `VITE_API_URL`.
+
 ## Local Demo Notes
 
 The frontend includes a local-auth fallback for classroom demos when the backend is unavailable. When the backend is running, real JWT auth and role checks are used. Local analytics are also kept as a fallback, then merged with backend analytics when available.
