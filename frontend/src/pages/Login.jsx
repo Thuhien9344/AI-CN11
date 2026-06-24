@@ -28,6 +28,7 @@ export default function Login() {
   const navigate = useNavigate()
   const location = useLocation()
   const { login, isLoading, error } = useAuthStore()
+  const [showPassword, setShowPassword] = useState(false)
   const [formData, setFormData] = useState({
     username: location.state?.username || '',
     password: '',
@@ -123,15 +124,38 @@ export default function Login() {
 
             <div>
               <label className="mb-2 block text-sm font-bold text-slate-700">Mật khẩu</label>
-              <input
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                className="field-control"
-                placeholder="Nhập mật khẩu"
-                required
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  className="field-control pr-12"
+                  placeholder="Nhap mat khau"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((value) => !value)}
+                  className="absolute inset-y-0 right-3 my-auto flex h-9 w-9 items-center justify-center rounded-md text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
+                  aria-label={showPassword ? 'An mat khau' : 'Hien mat khau'}
+                  title={showPassword ? 'An mat khau' : 'Hien mat khau'}
+                >
+                  {showPassword ? (
+                    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                      <path d="M3 3l18 18" />
+                      <path d="M10.6 10.6a2 2 0 0 0 2.8 2.8" />
+                      <path d="M9.9 4.2A10.6 10.6 0 0 1 12 4c6 0 9 8 9 8a15.4 15.4 0 0 1-2.1 3.4" />
+                      <path d="M6.6 6.6C4.2 8.2 3 12 3 12s3 8 9 8a10.7 10.7 0 0 0 5.4-1.6" />
+                    </svg>
+                  ) : (
+                    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                  )}
+                </button>
+              </div>
             </div>
 
             <button type="submit" disabled={isLoading} className="primary-button w-full py-3">
@@ -150,3 +174,5 @@ export default function Login() {
     </main>
   )
 }
+
+
