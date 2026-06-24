@@ -185,8 +185,10 @@ export const useAuthStore = create((set, get) => ({
           return { success: true }
         }
 
-        set({ error: result.error, isLoading: false })
-        return result
+        const message =
+          'Sai tai khoan/email hoac mat khau. Neu chua co tai khoan tren he thong nay, hay bam Tao tai khoan moi truoc.'
+        set({ error: message, isLoading: false })
+        return { success: false, error: message }
       }
 
       const message = error.response?.data?.detail || 'Login failed'
@@ -207,6 +209,7 @@ export const useAuthStore = create((set, get) => ({
         password,
         full_name,
         role,
+        student_class,
       })
       saveProfileMeta(username, { role, student_class, full_name })
       set({ isLoading: false })
@@ -331,3 +334,6 @@ export const useChatStore = create((set) => ({
 
   clearError: () => set({ error: null }),
 }))
+
+
+

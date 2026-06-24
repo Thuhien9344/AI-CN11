@@ -49,12 +49,15 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
 @router.post("/login", response_model=Token)
 async def login(credentials: UserLogin, db: Session = Depends(get_db)):
     """Authenticate user and return JWT token."""
-    user = db.query(User).filter(User.username == credentials.username).first()
+    username_or_email = credentials.username.strip()
+    user = db.query(User).filter(
+        (User.username == username_or_email) | (User.email == username_or_email)
+    ).first()
 
     if not user or not verify_password(credentials.password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid username or password",
+            detail="Sai tai khoan/email hoac mat khau. Neu chua co tai khoan, hay dang ky truoc.",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
@@ -80,3 +83,5 @@ async def login(credentials: UserLogin, db: Session = Depends(get_db)):
 async def get_current_user(current_user: User = Depends(get_authenticated_user)):
     """Get the authenticated user from the Bearer token."""
     return current_user
+
+
