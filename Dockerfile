@@ -17,11 +17,10 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-RUN npm install -g serve@14
-
 COPY --from=build /app/frontend/dist ./dist
+COPY server.js ./server.js
 
 ENV PORT=8080
 EXPOSE 8080
 
-CMD ["sh", "-c", "serve -s dist -l tcp://0.0.0.0:${PORT}"]
+CMD ["node", "server.js"]
