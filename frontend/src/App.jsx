@@ -1,25 +1,43 @@
-import { Suspense, lazy } from 'react'
+import { Component, Suspense, lazy } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import { useAuthStore } from './store'
 
 // Pages
-const Login = lazy(() => import('./pages/Login'))
-const Register = lazy(() => import('./pages/Register'))
-const Dashboard = lazy(() => import('./pages/Dashboard'))
-const CourseDetail = lazy(() => import('./pages/CourseDetail'))
-const LessonDetail = lazy(() => import('./pages/LessonDetail'))
-const ChatBot = lazy(() => import('./pages/ChatBot'))
-const Quiz = lazy(() => import('./pages/Quiz'))
-const ThreeDSimulation = lazy(() => import('./pages/ThreeDSimulation'))
-const PersonalProgress = lazy(() => import('./pages/PersonalProgress'))
-const ChapterTests = lazy(() => import('./pages/ChapterTests'))
-const Classroom = lazy(() => import('./pages/Classroom'))
-const SystemDesignLab = lazy(() => import('./pages/SystemDesignLab'))
-const PracticeBank = lazy(() => import('./pages/PracticeBank'))
-const ProjectionPractice = lazy(() => import('./pages/ProjectionPractice'))
-const CircuitExperimentLab = lazy(() => import('./pages/CircuitExperimentLab'))
-const NotFound = lazy(() => import('./pages/NotFound'))
+const lazyPage = (loader) =>
+  lazy(() =>
+    loader().catch((error) => {
+      const message = String(error?.message || error || '')
+      const isChunkError =
+        message.includes('Failed to fetch dynamically imported module') ||
+        message.includes('Loading chunk') ||
+        message.includes('Importing a module script failed')
+
+      if (isChunkError && sessionStorage.getItem('chunk-reload-attempted') !== 'true') {
+        sessionStorage.setItem('chunk-reload-attempted', 'true')
+        window.location.reload()
+      }
+
+      throw error
+    })
+  )
+
+const Login = lazyPage(() => import('./pages/Login'))
+const Register = lazyPage(() => import('./pages/Register'))
+const Dashboard = lazyPage(() => import('./pages/Dashboard'))
+const CourseDetail = lazyPage(() => import('./pages/CourseDetail'))
+const LessonDetail = lazyPage(() => import('./pages/LessonDetail'))
+const ChatBot = lazyPage(() => import('./pages/ChatBot'))
+const Quiz = lazyPage(() => import('./pages/Quiz'))
+const ThreeDSimulation = lazyPage(() => import('./pages/ThreeDSimulation'))
+const PersonalProgress = lazyPage(() => import('./pages/PersonalProgress'))
+const ChapterTests = lazyPage(() => import('./pages/ChapterTests'))
+const Classroom = lazyPage(() => import('./pages/Classroom'))
+const SystemDesignLab = lazyPage(() => import('./pages/SystemDesignLab'))
+const PracticeBank = lazyPage(() => import('./pages/PracticeBank'))
+const ProjectionPractice = lazyPage(() => import('./pages/ProjectionPractice'))
+const CircuitExperimentLab = lazyPage(() => import('./pages/CircuitExperimentLab'))
+const NotFound = lazyPage(() => import('./pages/NotFound'))
 
 // Components
 import Navigation from './components/Navigation'
@@ -42,6 +60,58 @@ const PublicOnlyRoute = ({ children }) => {
 const PageFallback = () => (
   <div className="page-container text-center text-slate-600">Đang tải không gian học tập...</div>
 )
+class AppErrorBoundary extends Component {
+  constructor(props) {
+    super(props)
+    this.state = { hasError: false, message: '' }
+  }
+
+  static getDerivedStateFromError(error) {
+    return {
+      hasError: true,
+      message: error?.message || 'Khong tai duoc trang.',
+    }
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error('App render error', error, errorInfo)
+  }
+
+  retry = () => {
+    sessionStorage.removeItem('chunk-reload-attempted')
+    window.location.reload()
+  }
+
+  goHome = () => {
+    sessionStorage.removeItem('chunk-reload-attempted')
+    window.location.href = '/'
+  }
+
+  render() {
+    if (!this.state.hasError) return this.props.children
+
+    return (
+      <div className="page-container">
+        <div className="mx-auto max-w-xl rounded-2xl border border-red-200 bg-white p-6 text-center shadow-lg">
+          <p className="text-sm font-black uppercase tracking-wide text-red-600">Trang dang bi loi tai du lieu</p>
+          <h1 className="mt-3 text-2xl font-black text-slate-950">Thu tai lai trang</h1>
+          <p className="mt-3 text-sm leading-6 text-slate-600">
+            Co the trinh duyet dang giu ban deploy cu. Bam tai lai de lay phien ban moi nhat.
+          </p>
+          <p className="mt-3 rounded-lg bg-slate-50 p-3 text-xs text-slate-500">{this.state.message}</p>
+          <div className="mt-5 flex flex-wrap justify-center gap-3">
+            <button type="button" onClick={this.retry} className="primary-button">
+              Tai lai
+            </button>
+            <button type="button" onClick={this.goHome} className="secondary-button">
+              Ve trang chinh
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+}
 
 function App() {
   return (
@@ -62,7 +132,8 @@ function App() {
       />
       <div className="min-h-screen bg-transparent">
         <Navigation />
-        <Suspense fallback={<PageFallback />}>
+        <AppErrorBoundary>
+          <Suspense fallback={<PageFallback />}>
           <Routes>
             {/* Public Routes */}
             <Route path="/login" element={<PublicOnlyRoute><Login /></PublicOnlyRoute>} />
@@ -217,10 +288,12 @@ function App() {
           {/* 404 */}
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </Suspense>
+          </Suspense>
+        </AppErrorBoundary>
       </div>
     </BrowserRouter>
   )
 }
 
 export default App
+
