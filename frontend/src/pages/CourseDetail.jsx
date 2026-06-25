@@ -17,6 +17,20 @@ import {
   readReferenceMaterials,
 } from '../utils/referenceMaterials'
 
+const toArray = (value, keys = []) => {
+  if (Array.isArray(value)) return value
+  if (!value || typeof value !== 'object') return []
+
+  for (const key of keys) {
+    if (Array.isArray(value[key])) return value[key]
+  }
+
+  if (Array.isArray(value.data)) return value.data
+  if (Array.isArray(value.items)) return value.items
+  if (Array.isArray(value.results)) return value.results
+
+  return []
+}
 export default function CourseDetail() {
   const { courseId } = useParams()
   const user = useAuthStore((state) => state.user)
@@ -37,14 +51,20 @@ export default function CourseDetail() {
   }, [courseId])
 
   const fetchData = async () => {
+    setIsLoading(true)
+    const sampleCourse = getSampleCourse(courseId)
+    const sampleLessons = getSampleLessonsByCourse(courseId)
+
     try {
       const courseRes = await coursesAPI.get(courseId)
-      setCourse(courseRes.data)
+      setCourse(courseRes.data && !Array.isArray(courseRes.data) ? courseRes.data : sampleCourse)
+
       const lessonsRes = await lessonsAPI.list(courseId)
-      setLessons(lessonsRes.data)
+      const apiLessons = toArray(lessonsRes.data, ['lessons'])
+      setLessons(apiLessons.length ? apiLessons : sampleLessons)
     } catch (error) {
-      setCourse(getSampleCourse(courseId))
-      setLessons(getSampleLessonsByCourse(courseId))
+      setCourse(sampleCourse)
+      setLessons(sampleLessons)
     } finally {
       setIsLoading(false)
     }
