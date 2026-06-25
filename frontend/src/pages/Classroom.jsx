@@ -22,9 +22,17 @@ const formatDate = (value) => {
 const getErrorMessage = (error, fallback) =>
   error?.response?.data?.detail || error?.message || fallback
 
+const asList = (payload) => {
+  if (Array.isArray(payload)) return payload
+  if (Array.isArray(payload?.data)) return payload.data
+  if (Array.isArray(payload?.items)) return payload.items
+  if (Array.isArray(payload?.results)) return payload.results
+  return []
+}
+
 const getLocalStudents = () => {
   try {
-    return JSON.parse(localStorage.getItem('local_auth_users') || '[]')
+    return asList(JSON.parse(localStorage.getItem('local_auth_users') || '[]'))
       .filter((item) => item.role === 'student')
       .map((item) => ({
         id: item.id || item.username,
@@ -53,7 +61,7 @@ const getLocalSubmissions = () => {
 }
 
 const readLocalSubmissions = (assignmentId) =>
-  getLocalSubmissions()[String(assignmentId)] || []
+  asList(getLocalSubmissions()[String(assignmentId)])
 
 const saveLocalSubmission = (assignmentId, submission) => {
   const submissions = getLocalSubmissions()
@@ -73,7 +81,7 @@ const LOCAL_MATERIALS_KEY = 'local_reference_materials'
 
 const readLocalMaterials = () => {
   try {
-    return JSON.parse(localStorage.getItem(LOCAL_MATERIALS_KEY) || '[]')
+    return asList(JSON.parse(localStorage.getItem(LOCAL_MATERIALS_KEY) || '[]'))
   } catch {
     return []
   }
@@ -96,7 +104,7 @@ const normalizeClassName = (value = '') => String(value || '').trim()
 
 const readLocalAssignments = () => {
   try {
-    return JSON.parse(localStorage.getItem(LOCAL_ASSIGNMENTS_KEY) || '[]')
+    return asList(JSON.parse(localStorage.getItem(LOCAL_ASSIGNMENTS_KEY) || '[]'))
   } catch {
     return []
   }
@@ -127,7 +135,7 @@ const assignmentTargetClass = (assignment = {}) =>
 
 const applyAssignmentClassMeta = (assignments = []) => {
   const classMap = readAssignmentClassMap()
-  return assignments.map((assignment) => ({
+  return asList(assignments).map((assignment) => ({
     ...assignment,
     target_class: assignmentTargetClass(assignment) || classMap[String(assignment.id)] || '',
   }))
@@ -195,7 +203,7 @@ export default function Classroom() {
 
   const visibleMaterials = useMemo(() => {
     const normalizedSearch = materialSearchTerm.trim().toLowerCase()
-    return materials.filter((material) => {
+    return asList(materials).filter((material) => {
       const matchesCourse = !materialCourseFilter || material.course_id === Number(materialCourseFilter)
       const matchesSearch =
         !normalizedSearch ||
@@ -209,21 +217,23 @@ export default function Classroom() {
   const localStudents = useMemo(() => getLocalStudents(), [])
 
   const classOptions = useMemo(() => {
-    const names = new Set(localStudents.map((student) => student.className).filter(Boolean))
-    assignments.forEach((assignment) => {
+    const safeAssignments = asList(assignments)
+    const names = new Set(asList(localStudents).map((student) => student.className).filter(Boolean))
+    safeAssignments.forEach((assignment) => {
       const targetClass = assignmentTargetClass(assignment)
       if (targetClass) names.add(targetClass)
     })
-    Object.values(submissionsByAssignment).flat().forEach((submission) => {
+    Object.values(submissionsByAssignment).flatMap(asList).forEach((submission) => {
       names.add(getClassFromSubmission(submission.student_name))
     })
     return [...names].filter(Boolean).sort((a, b) => a.localeCompare(b, 'vi'))
   }, [assignments, localStudents, submissionsByAssignment])
 
   const assignmentRows = useMemo(() => {
-    if (!isTeacher || !classFilter) return assignments
+    const safeAssignments = asList(assignments)
+    if (!isTeacher || !classFilter) return safeAssignments
     const selected = normalizeClassName(classFilter).toLowerCase()
-    return assignments.filter((assignment) => {
+    return safeAssignments.filter((assignment) => {
       const targetClass = assignmentTargetClass(assignment).toLowerCase()
       return !targetClass || targetClass === selected
     })
@@ -234,7 +244,7 @@ export default function Classroom() {
     (isTeacher ? classFilter || assignmentTargetClass(activeAssignment) : user?.student_class) ||
     classOptions[0] ||
     ''
-  const activeSubmissions = submissionsByAssignment[activeAssignment?.id || activeAssignmentId] || []
+  const activeSubmissions = asList(submissionsByAssignment[activeAssignment?.id || activeAssignmentId])
 
   useEffect(() => {
     if (!assignmentRows.length) {
@@ -287,14 +297,15 @@ export default function Classroom() {
         classroomAPI.listPosts(),
         classroomAPI.listAssignments(),
       ])
+      const serverAssignments = asList(assignmentResponse.data)
       const combinedAssignments = applyAssignmentClassMeta([
         ...readLocalAssignments(),
-        ...assignmentResponse.data,
+        ...serverAssignments,
       ])
       const visibleAssignments = combinedAssignments.filter((assignment) =>
         isAssignmentVisibleToUser(assignment, user, isTeacher),
       )
-      setPosts(postResponse.data)
+      setPosts(asList(postResponse.data))
       setAssignments(visibleAssignments)
       setActiveAssignmentId((prev) =>
         visibleAssignments.some((assignment) => assignment.id === prev) ? prev : visibleAssignments[0]?.id || null,
@@ -309,7 +320,7 @@ export default function Classroom() {
   const loadMaterials = async () => {
     try {
       const serverMaterials = await readReferenceMaterials()
-      setMaterials([...readLocalMaterials(), ...serverMaterials])
+      setMaterials([...readLocalMaterials(), ...asList(serverMaterials)])
     } catch {
       setMaterials(readLocalMaterials())
       toast.error('Không đọc được kho tài liệu trên server')
@@ -323,7 +334,7 @@ export default function Classroom() {
       const response = await classroomAPI.listSubmissions(assignmentId)
       setSubmissionsByAssignment((prev) => ({
         ...prev,
-        [assignmentId]: [...localSubmissions, ...response.data],
+        [assignmentId]: [...localSubmissions, ...asList(response.data)],
       }))
     } catch (error) {
       if (isLocalAuthError(error)) {
