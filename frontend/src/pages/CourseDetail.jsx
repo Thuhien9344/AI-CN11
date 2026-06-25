@@ -59,7 +59,7 @@ export default function CourseDetail() {
   }
 
   const chapterMaterials = useMemo(
-    () => materials.filter((material) => material.course_id === Number(courseId)),
+    () => (Array.isArray(materials) ? materials : []).filter((material) => material.course_id === Number(courseId)),
     [materials, courseId],
   )
 
