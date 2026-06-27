@@ -211,6 +211,31 @@ export const getSimulationExperimentForLesson = (lesson) => {
     return completeExperiment(grade10ByCourse[course] || fallbackExperiment, lesson)
   }
 
+  if (grade === 11 && sourceId === 202) {
+    return completeExperiment({
+      title: 'Mô phỏng sản xuất gang - thép trong lò cao',
+      unit: 'Bài 4. Vật liệu kim loại và hợp kim',
+      duration: '12 phút',
+      modelFocus: 'Lò cao, nạp liệu quặng sắt - than cốc - đá vôi, gió nóng, vùng phản ứng, gang lỏng, xỉ và khí thải.',
+      objective: 'Giúp học sinh biến hình 3.2 thành mô hình có thể quan sát theo dòng vật chất và giải thích vai trò của từng thành phần trong sản xuất gang - thép.',
+      setup: [
+        'Mở mô phỏng 3D của Bài 4 và bật lần lượt các lớp: Nạp liệu, Gió nóng, Gang - xỉ, Khí thải.',
+        'Quan sát chiều chuyển động ngược nhau: vật liệu rắn đi từ trên xuống, khí nóng đi từ dưới lên.',
+        'Dừng ở từng nhãn để đọc vai trò của quặng sắt, than cốc, đá vôi và cửa tháo gang/xỉ.',
+      ],
+      tasks: [
+        'Vẽ lại sơ đồ dòng vật chất trong lò cao bằng mũi tên.',
+        'Giải thích vai trò của than cốc, đá vôi và gió nóng trong quá trình luyện gang.',
+        'Chỉ ra vị trí gang lỏng, xỉ và khí thải trong mô hình; nêu yêu cầu xử lí môi trường.',
+      ],
+      observe: [
+        'Vì sao nguyên liệu được nạp từ đỉnh lò còn gió nóng lại thổi từ đáy lò?',
+        'Gang lỏng và xỉ khác nhau như thế nào nên có thể tách riêng?',
+        'Khí thải ở đỉnh lò cần được xử lí hoặc tận dụng ra sao?',
+      ],
+      safety: 'Chỉ quan sát trên mô phỏng. Với sản xuất thật, lò cao có nhiệt độ rất cao, khí độc, bụi và xỉ nóng nên cần hệ thống bảo hộ, che chắn, thông gió và xử lí môi trường nghiêm ngặt.',
+    }, lesson)
+  }
   if (grade === 11) {
     return completeExperiment(grade11ByCourse[course] || fallbackExperiment, lesson)
   }

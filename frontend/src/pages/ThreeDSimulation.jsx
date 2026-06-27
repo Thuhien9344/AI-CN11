@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+﻿import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
@@ -577,8 +577,36 @@ const industrial12Simulations = {
   },
 }
 
+const blastFurnaceSimulation = {
+  modelId: 20,
+  label: 'KNTT - Bài 4',
+  title: 'Mô hình sản xuất gang - thép trong lò cao',
+  subtitle: 'Quặng sắt, than cốc, đá vôi, gió nóng, gang lỏng, xỉ và khí thải',
+  objective:
+    'Mô phỏng theo hình sản xuất gang - thép trong lò cao: vật liệu nạp từ miệng lò đi xuống, gió nóng thổi từ đáy lò đi lên, tạo phản ứng khử oxit sắt để thu gang lỏng và tách xỉ.',
+  layers: [
+    { id: 'furnace', name: 'Lò cao', note: 'Thân lò chịu nhiệt, nơi diễn ra quá trình cháy, khử oxit sắt, nóng chảy và tách gang - xỉ.' },
+    { id: 'charge', name: 'Nạp liệu', note: 'Quặng sắt, than cốc và đá vôi được đưa vào đỉnh lò theo từng lớp.' },
+    { id: 'hotBlast', name: 'Gió nóng', note: 'Không khí nóng thổi vào đáy lò giúp than cốc cháy, tạo nhiệt độ cao và khí khử.' },
+    { id: 'products', name: 'Gang - xỉ', note: 'Gang lỏng chảy ra cửa tháo gang; xỉ nhẹ hơn nổi lên và được tháo riêng.' },
+    { id: 'gas', name: 'Khí thải', note: 'Khí sau phản ứng đi lên đỉnh lò, cần được thu hồi, xử lí hoặc tận dụng nhiệt.' },
+  ],
+  checkpoints: [
+    'Nguyên liệu chính gồm quặng sắt, than cốc và đá vôi; mỗi thành phần có nhiệm vụ riêng trong lò cao.',
+    'Gió nóng đi từ dưới lên, còn vật liệu rắn đi từ trên xuống, tạo quá trình trao đổi nhiệt và phản ứng liên tục.',
+    'Gang lỏng và xỉ được tách ở đáy lò; khí thải ra ở đỉnh lò cần được xử lí để giảm tác động môi trường.',
+  ],
+  teacherPrompts: [
+    'Vì sao than cốc vừa là nhiên liệu vừa tham gia tạo khí khử trong lò cao?',
+    'Đá vôi có vai trò gì trong việc tạo xỉ và loại bỏ tạp chất?',
+    'Nếu gió nóng cấp vào không đủ thì năng suất và chất lượng gang bị ảnh hưởng như thế nào?',
+  ],
+}
 const getSimulationKey = (lesson) => {
   if (!lesson) return 1
+  if (Number(lesson.grade_level) === 11 && Number(lesson.source_id || lesson.id) === 202) {
+    return 'blastFurnace'
+  }
   return lesson.source_course_id || lesson.course_id || 1
 }
 
@@ -693,10 +721,128 @@ function addAnnotation(annotations, parent, layerId, label, note, x, y, z) {
   annotations.push({ anchor, layerId, label, note })
 }
 
+function setLayerName(object, layerId) {
+  object.name = layerId
+  object.traverse((part) => {
+    if (part.isMesh) part.name = layerId
+  })
+  return object
+}
+
+function buildBlastFurnaceModel() {
+  const root = new THREE.Group()
+  const animated = []
+  const annotations = []
+
+  const floor = box(7.2, 0.12, 3.2, 0xe2e8f0)
+  floor.position.set(0, -0.7, 0)
+  root.add(floor)
+
+  const furnace = setLayerName(new THREE.Group(), 'furnace')
+  const shaft = cylinder(0.72, 3.45, 0x334155, 0.24)
+  shaft.position.y = 0.95
+  furnace.add(shaft)
+  const belly = cylinder(0.92, 0.72, 0x475569, 0.32)
+  belly.position.y = -0.15
+  furnace.add(belly)
+  const hearth = cylinder(0.82, 0.5, 0x1f2937, 0.82)
+  hearth.position.y = -0.52
+  furnace.add(hearth)
+  const topBell = cone(0.58, 0.42, 0x64748b, 0.78)
+  topBell.position.y = 2.9
+  furnace.add(topBell)
+  const flame = cone(0.42, 0.82, 0xf97316, 0.62)
+  flame.position.y = -0.18
+  furnace.add(flame)
+  animated.push({ mesh: flame, type: 'blastFlame' })
+
+  const oreLayer = cylinder(0.46, 0.32, 0xef4444, 0.84)
+  oreLayer.position.y = 1.9
+  furnace.add(oreLayer)
+  const cokeLayer = cylinder(0.48, 0.32, 0x111827, 0.84)
+  cokeLayer.position.y = 1.48
+  furnace.add(cokeLayer)
+  const limestoneLayer = cylinder(0.5, 0.32, 0xf8fafc, 0.84)
+  limestoneLayer.position.y = 1.06
+  furnace.add(limestoneLayer)
+  root.add(furnace)
+
+  const charge = setLayerName(new THREE.Group(), 'charge')
+  const rail = box(0.08, 4.1, 0.08, 0x475569)
+  rail.rotation.z = -0.72
+  rail.position.set(-1.35, 1.25, 0)
+  charge.add(rail)
+  const bucket = box(0.42, 0.3, 0.38, 0xf59e0b)
+  bucket.position.set(-2.18, 0.28, 0)
+  bucket.rotation.z = -0.15
+  charge.add(bucket)
+  animated.push({ mesh: bucket, type: 'chargeBucket' })
+  const chargeArrow = setLayerName(createFlowArrow(1.15, 0xfacc15), 'charge')
+  chargeArrow.rotation.z = -0.85
+  chargeArrow.position.set(-0.82, 2.35, 0.02)
+  charge.add(chargeArrow)
+  animated.push({ mesh: chargeArrow, type: 'flowPulse' })
+  root.add(charge)
+
+  const hotBlast = setLayerName(new THREE.Group(), 'hotBlast')
+  const leftStove = cylinder(0.28, 2.35, 0x60a5fa, 0.35)
+  leftStove.position.set(-2.95, 0.55, 0)
+  hotBlast.add(leftStove)
+  const rightStove = cylinder(0.28, 2.35, 0xf9a8d4, 0.35)
+  rightStove.position.set(2.95, 0.55, 0)
+  hotBlast.add(rightStove)
+  const leftPipe = box(2.35, 0.12, 0.12, 0x0284c7)
+  leftPipe.position.set(-1.78, -0.42, 0)
+  hotBlast.add(leftPipe)
+  const rightPipe = box(2.35, 0.12, 0.12, 0xec4899)
+  rightPipe.position.set(1.78, -0.42, 0)
+  hotBlast.add(rightPipe)
+  const blastArrow = setLayerName(createFlowArrow(1.35, 0xf97316), 'hotBlast')
+  blastArrow.position.set(-1.62, -0.2, 0.18)
+  hotBlast.add(blastArrow)
+  animated.push({ mesh: blastArrow, type: 'flowPulse' })
+  root.add(hotBlast)
+
+  const products = setLayerName(new THREE.Group(), 'products')
+  const ironRunner = box(2.4, 0.1, 0.22, 0xf97316, 0.88)
+  ironRunner.position.set(1.42, -0.76, 0.34)
+  products.add(ironRunner)
+  const slagRunner = box(2.1, 0.08, 0.18, 0xfacc15, 0.8)
+  slagRunner.position.set(-1.28, -0.62, -0.38)
+  products.add(slagRunner)
+  const moltenDrop = new THREE.Mesh(new THREE.SphereGeometry(0.16, 24, 24), material(0xff6b00, 0.84))
+  moltenDrop.position.set(0.45, -0.73, 0.34)
+  products.add(moltenDrop)
+  animated.push({ mesh: moltenDrop, type: 'moltenPulse' })
+  root.add(products)
+
+  const gas = setLayerName(new THREE.Group(), 'gas')
+  const gasArrow = setLayerName(createFlowArrow(1.1, 0x94a3b8), 'gas')
+  gasArrow.rotation.z = Math.PI / 2
+  gasArrow.position.set(0.18, 2.65, 0)
+  gas.add(gasArrow)
+  animated.push({ mesh: gasArrow, type: 'flowPulse' })
+  const gasPipe = box(1.65, 0.1, 0.1, 0x64748b, 0.7)
+  gasPipe.position.set(1.12, 2.8, 0)
+  gas.add(gasPipe)
+  root.add(gas)
+
+  addAnnotation(annotations, root, 'furnace', 'Lò cao', 'Thân lò nơi quặng sắt, than cốc, đá vôi đi xuống và phản ứng với khí nóng đi lên.', 0, 2.45, 0)
+  addAnnotation(annotations, root, 'charge', 'Nạp liệu', 'Quặng sắt, than cốc và đá vôi được đưa vào miệng lò theo từng lớp.', -2.35, 2.2, 0)
+  addAnnotation(annotations, root, 'hotBlast', 'Gió nóng', 'Không khí nóng thổi vào đáy lò giúp than cốc cháy, tạo nhiệt và khí khử.', -2.72, -0.1, 0)
+  addAnnotation(annotations, root, 'products', 'Gang lỏng và xỉ', 'Gang lỏng chảy ra cửa tháo gang; xỉ nhẹ hơn được tách ra ở cửa xỉ.', 1.72, -0.42, 0.45)
+  addAnnotation(annotations, root, 'gas', 'Khí thải', 'Khí sau phản ứng đi lên đỉnh lò và được dẫn ra ngoài để xử lí hoặc tận dụng nhiệt.', 1.38, 2.98, 0)
+
+  return { root, animated, annotations }
+}
 function buildChapterModel(courseId, engineMode = 'twoStroke') {
   const root = new THREE.Group()
   const animated = []
   const annotations = []
+
+  if (courseId === 20) {
+    return buildBlastFurnaceModel()
+  }
 
   if (courseId === 1) {
     const stations = [
@@ -1345,7 +1491,9 @@ export default function ThreeDSimulation() {
   const simulation = lesson?.grade_level === 12
     ? getIndustrial12Simulation(simulationKey)
     : lesson?.grade_level === 11
-      ? mechanical11SpecializedSimulations[simulationKey] || mechanical11SpecializedSimulations[1]
+      ? simulationKey === 'blastFurnace'
+        ? blastFurnaceSimulation
+        : mechanical11SpecializedSimulations[simulationKey] || mechanical11SpecializedSimulations[1]
       : technology10Simulations[simulationKey] || technology10Simulations[1]
   const displayedSimulation = simulation.modelId === 6 && engineMode === 'diesel4'
     ? dieselFourStrokeSimulation
@@ -1648,6 +1796,20 @@ export default function ThreeDSimulation() {
           mesh.material.transparent = true
         }
         if (type === 'transfer') mesh.position.x = -3 + ((angle * 0.7) % 6)
+        if (type === 'chargeBucket') {
+          const t = (Math.sin(angle * 0.85) + 1) / 2
+          mesh.position.x = -2.35 + t * 1.35
+          mesh.position.y = 0.16 + t * 2.12
+        }
+        if (type === 'blastFlame') {
+          mesh.scale.setScalar(0.92 + Math.sin(angle * 4) * 0.08)
+          mesh.material.opacity = 0.48 + Math.abs(Math.sin(angle * 3)) * 0.26
+          mesh.material.transparent = true
+        }
+        if (type === 'moltenPulse') {
+          mesh.position.x = 0.35 + ((angle * 0.65) % 1.8)
+          mesh.scale.setScalar(0.75 + Math.abs(Math.sin(angle * 2.5)) * 0.35)
+        }
       })
 
       const selected = selectedLayerRef.current
