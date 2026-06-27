@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
@@ -1466,11 +1466,12 @@ export default function ThreeDSimulation() {
 
   useEffect(() => {
     const fetchLesson = async () => {
+      const catalogLesson = getSampleLesson(lessonId)
       try {
         const response = await lessonsAPI.get(lessonId)
-        setLesson(response.data)
+        setLesson(catalogLesson || response.data)
       } catch {
-        setLesson(getSampleLesson(lessonId))
+        setLesson(catalogLesson)
       } finally {
         setIsLoading(false)
       }

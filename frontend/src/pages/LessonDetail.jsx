@@ -348,11 +348,12 @@ export default function LessonDetail() {
   }, [user?.id, lessonId])
 
   const fetchLesson = async () => {
+    const catalogLesson = getSampleLesson(lessonId)
     try {
       const response = await lessonsAPI.get(lessonId)
-      setLesson(response.data)
+      setLesson(catalogLesson || response.data)
     } catch (error) {
-      setLesson(getSampleLesson(lessonId))
+      setLesson(catalogLesson)
     } finally {
       setIsLoading(false)
     }
